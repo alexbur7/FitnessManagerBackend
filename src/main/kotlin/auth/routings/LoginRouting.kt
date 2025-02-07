@@ -20,6 +20,7 @@ import ru.alexbur.backend.base.errors.createBadRequestError
 import ru.alexbur.backend.di.BaseModule
 import ru.alexbur.backend.utils.compareTimeWithCurrent
 import ru.alexbur.backend.utils.getCurrentTimestamp
+import ru.alexbur.backend.utils.getUserAgent
 import java.security.SecureRandom
 import java.sql.Connection
 
@@ -98,7 +99,7 @@ fun Application.configureLoginRouting(dbConnection: Connection, jwtHelper: JwtHe
             authService.delete(user.userId)
             val accessToken = jwtHelper.generateAccessToken(user.userId)
             val refreshToken = jwtHelper.generateRefreshToken(user.userId)
-            sessionService.create(user.userId, refreshToken)
+            sessionService.create(user.userId, refreshToken, call.request.getUserAgent())
 
             call.respond(
                 HttpStatusCode.OK, LoginResponse(
@@ -119,7 +120,7 @@ fun Application.configureLoginRouting(dbConnection: Connection, jwtHelper: JwtHe
                 call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_USER))
                 return@post
             }
-            val session = sessionService.read(userId)
+            val session = sessionService.read(userId, call.request.getUserAgent())
             if (session == null) {
                 call.respond(HttpStatusCode.Unauthorized, createBadRequestError(FitnessManagerErrors.SESSION_NOT_FOUND))
                 return@post

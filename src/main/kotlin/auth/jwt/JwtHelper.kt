@@ -6,6 +6,7 @@ import com.auth0.jwt.interfaces.DecodedJWT
 import io.ktor.server.application.*
 import ru.alexbur.backend.auth.jwt.JwtHelper.Companion.ACCESS_TOKEN_LIFETIME
 import ru.alexbur.backend.auth.jwt.JwtHelper.Companion.REFRESH_TOKEN_LIFETIME
+import ru.alexbur.backend.auth.jwt.JwtHelper.Companion.USER_ID_KEY
 import ru.alexbur.backend.utils.getCurrentTimestamp
 import java.util.*
 
@@ -21,7 +22,7 @@ class JwtHelper(
                 .withIssuer(issuer)
                 .build()
                 .verify(token)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null // Токен недействителен
         }
     }
@@ -33,7 +34,7 @@ class JwtHelper(
         return JWT.create()
             .withAudience(audience)
             .withIssuer(issuer)
-            .withClaim("user_id", userId)
+            .withClaim(USER_ID_KEY, userId)
             .withExpiresAt(Date(getCurrentTimestamp().time + lifeTime))
             .sign(Algorithm.HMAC256(secret))
     }
@@ -41,11 +42,12 @@ class JwtHelper(
     internal companion object {
         const val ACCESS_TOKEN_LIFETIME = 1000 * 60 * 15L // 15 минут
         const val REFRESH_TOKEN_LIFETIME = 1000 * 60 * 60 * 24 * 30L // 30 дней
+        const val USER_ID_KEY = "user_id"
     }
 }
 
 fun JwtHelper.verifyToken(token: String): Long? {
-    return decodeToken(token)?.claims["user_id"]?.asLong()
+    return decodeToken(token)?.claims[USER_ID_KEY]?.asLong()
 }
 
 fun JwtHelper.isTokenExpired(token: String): Boolean {

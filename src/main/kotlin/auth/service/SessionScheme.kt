@@ -9,6 +9,7 @@ data class Session(
     val id: Long,
     val userId: Long,
     val refreshToken: String,
+    val userAgent: String,
 )
 
 class SessionService(
@@ -17,11 +18,15 @@ class SessionService(
 ) {
     companion object {
         private const val CREATE_TABLE_SESSION =
-            "CREATE TABLE IF NOT EXISTS SESSION (id SERIAL PRIMARY KEY, user_id INT NOT NULL, " +
-                    "refresh_token VARCHAR(255) NOT NULL);"
-        private const val INSERT_SESSION = "INSERT INTO SESSION (user_id, refresh_token) VALUES (?, ?)"
-        private const val SELECT_SESSION_BY_USER_ID = "SELECT id, refresh_token FROM SESSION WHERE user_id = ?"
-        private const val UPDATE_SESSION = "UPDATE SESSION SET refresh_token = ? WHERE id = ?"
+            "CREATE TABLE IF NOT EXISTS SESSIONS (id SERIAL PRIMARY KEY, user_id INT NOT NULL, " +
+                    "refresh_token VARCHAR(255) NOT NULL, user_agent VARCHAR(255) NOT NULL, " +
+                    "UNIQUE (user_id, user_agent));"
+        private const val INSERT_SESSION = "INSERT INTO SESSIONS (user_id, refresh_token, user_agent) " +
+                "VALUES (?, ?, ?) ON CONFLICT (user_id, user_agent)" +
+                "DO UPDATE SET refresh_token = EXCLUDED.refresh_token;"
+        private const val SELECT_SESSION_BY_USER_ID = "SELECT id, refresh_token FROM SESSIONS " +
+                "WHERE user_id = ? AND user_agent = ?"
+        private const val UPDATE_SESSION = "UPDATE SESSIONS SET refresh_token = ? WHERE id = ?"
     }
 
     init {
@@ -29,10 +34,11 @@ class SessionService(
         statement.executeUpdate(CREATE_TABLE_SESSION)
     }
 
-    suspend fun create(userId: Long, refreshToken: String) = withContext(dispatcherProvider.io()) {
+    suspend fun create(userId: Long, refreshToken: String, userAgent: String) = withContext(dispatcherProvider.io()) {
         val statement = connection.prepareStatement(INSERT_SESSION, Statement.RETURN_GENERATED_KEYS)
         statement.setLong(1, userId)
         statement.setString(2, refreshToken)
+        statement.setString(3, userAgent)
         statement.executeUpdate()
         val generatedKeys = statement.generatedKeys
         if (generatedKeys.next()) {
@@ -42,9 +48,10 @@ class SessionService(
         }
     }
 
-    suspend fun read(userId: Long): Session? = withContext(dispatcherProvider.io()) {
+    suspend fun read(userId: Long, userAgent: String): Session? = withContext(dispatcherProvider.io()) {
         val statement = connection.prepareStatement(SELECT_SESSION_BY_USER_ID)
         statement.setLong(1, userId)
+        statement.setString(2, userAgent)
         val resultSet = statement.executeQuery()
 
         if (resultSet.next()) {
@@ -53,7 +60,8 @@ class SessionService(
             Session(
                 id = id,
                 userId = userId,
-                refreshToken = refreshToken
+                refreshToken = refreshToken,
+                userAgent = userAgent,
             )
         } else {
             null

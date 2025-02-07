@@ -16,6 +16,8 @@ enum class FitnessManagerErrors(val code: String, val message: String) {
     ERROR_REFRESH_TOKEN("ErrorRefreshToken", "Необходимо авторизоваться заново"),
     UNKNOWN_ID("UnknownId", "Идентификатор не отправлен"),
     UNKNOWN_SPORT_ACTIVITY("UnknownSportActivity", "Тренировка с таким идентификатором не найдена"),
+    ERROR_CREATE_SPORT_ACTIVITY("UnknownSportActivity", "У вас уже есть тренировка с данным клиентом в этом время"),
+    INVALID_END_TIME("InvalidEndTime", "Дата окончания не может быть раньше даты начала"),
 }
 
 fun createBadRequestError(error: FitnessManagerErrors): ErrorWrapperResponse {

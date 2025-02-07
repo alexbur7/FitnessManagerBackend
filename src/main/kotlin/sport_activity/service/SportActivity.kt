@@ -40,7 +40,10 @@ class SportActivityService(
                 "comment, client_card_id) VALUES (?, ?, ?, ?, ?, ?);"
         private const val SELECT_BY_ID = "SELECT * FROM SportActivities WHERE id = ? AND user_id = ?;"
         private const val SELECT_BY_TIME = "SELECT * FROM SportActivities WHERE user_id = ? " +
-                "AND start_time > ? AND end_time < ?;"
+                "AND start_time >= ? AND end_time <= ?;"
+
+        private const val SELECT_BY_TIME_WITH_CLIENT_ID = "SELECT id FROM SportActivities WHERE user_id = ? " +
+                "AND client_card_id = ? AND start_time < ? AND end_time > ?;"
     }
 
     init {
@@ -48,7 +51,7 @@ class SportActivityService(
         statement.executeUpdate(CREATE_TABLE)
     }
 
-    suspend fun create(activity: CreateSportActivity) = withContext(dispatcherProvider.io()) {
+    suspend fun create(activity: CreateSportActivity): Long = withContext(dispatcherProvider.io()) {
         val statement = connection.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS)
         statement.setLong(1, activity.userId)
         statement.setString(2, activity.name)
@@ -58,10 +61,10 @@ class SportActivityService(
         statement.setLong(6, activity.clientCardId)
         statement.executeUpdate()
         val generatedKeys = statement.generatedKeys
-        if (generatedKeys.next()) {
+        return@withContext if (generatedKeys.next()) {
             generatedKeys.getLong(1)
         } else {
-            IllegalStateException("Unknown error")
+            throw IllegalStateException("Unknown error")
         }
     }
 
@@ -129,5 +132,21 @@ class SportActivityService(
             )
         }
         result.toList()
+    }
+
+    suspend fun hasActivities(
+        userId: Long,
+        startTime: Timestamp,
+        endTime: Timestamp,
+        clientCardId: Long,
+    ): Boolean = withContext(dispatcherProvider.io()) {
+        val statement = connection.prepareStatement(SELECT_BY_TIME_WITH_CLIENT_ID)
+        statement.setLong(1, userId)
+        statement.setLong(2, clientCardId)
+        statement.setTimestamp(3, endTime)
+        statement.setTimestamp(4, startTime)
+        val resultSet = statement.executeQuery()
+
+        resultSet.next()
     }
 }

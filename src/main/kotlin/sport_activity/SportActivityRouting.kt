@@ -19,7 +19,6 @@ import ru.alexbur.backend.sport_activity.service.CreateSportActivity
 import ru.alexbur.backend.sport_activity.service.SportActivityService
 import ru.alexbur.backend.utils.getUserId
 import java.sql.Connection
-import java.sql.Timestamp
 
 fun Application.configureCalendarRouting(
     dbConnection: Connection,
@@ -64,17 +63,45 @@ fun Application.configureCalendarRouting(
             post("/sport-activity/create") {
                 val userId = call.getUserId() ?: return@post
                 val request = call.receive<SportActivityCreateRequest>()
-                sportActivityService.create(
+                if (request.startTime >= request.endTime) {
+                    call.respond(
+                        HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.INVALID_END_TIME)
+                    )
+                    return@post
+                }
+                val hasActivities = sportActivityService.hasActivities(
+                    userId = userId,
+                    startTime = request.startTime,
+                    endTime = request.endTime,
+                    clientCardId = request.clientCardId
+                )
+                if (hasActivities) {
+                    call.respond(
+                        HttpStatusCode.BadRequest,
+                        createBadRequestError(FitnessManagerErrors.ERROR_CREATE_SPORT_ACTIVITY)
+                    )
+                    return@post
+                }
+
+                val id = sportActivityService.create(
                     CreateSportActivity(
                         userId = userId,
                         name = request.name,
-                        startTime = Timestamp.valueOf(request.startTime),
-                        endTime = Timestamp.valueOf(request.endTime),
+                        startTime = request.startTime,
+                        endTime = request.endTime,
                         comment = request.comment,
                         clientCardId = request.clientCardId
                     )
                 )
-                call.respond(HttpStatusCode.OK)
+                val data = sportActivityService.readById(id, userId)
+                if (data == null) {
+                    call.respond(
+                        HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_SPORT_ACTIVITY)
+                    )
+                    return@post
+                }
+                val response = mapper.map(data).toSuccess(SportActivityResponse.serializer())
+                call.respond(HttpStatusCode.OK, response)
             }
         }
     }

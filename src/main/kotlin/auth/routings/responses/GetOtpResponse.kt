@@ -1,4 +1,4 @@
-package routings.responses
+package auth.routings.responses
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

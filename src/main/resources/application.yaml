@@ -1,13 +1,18 @@
 ktor:
-    application:
-        modules:
-            - ru.alexbur.backend.ApplicationKt.module
-    deployment:
-        port: 8080
+  application:
+    modules:
+      - ru.alexbur.backend.ApplicationKt.module
+  deployment:
+    port: 8080
+
 postgres:
   url: "jdbc:postgresql://localhost:5432/postgres"
   user: postgres
   password: 87654321
   domain: "https://jwt-provider-domain/"
-  audience: "jwt-audience"
-  realm: "ktor sample app"
+
+jwt:
+  secret: "secret"
+  issuer: "fitness-manager-backend"
+  audience: "FitnessManagerApp"
+  realm: "access"

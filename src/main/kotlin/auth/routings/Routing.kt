@@ -1,4 +1,4 @@
-package ru.alexbur.backend.routings
+package ru.alexbur.backend.auth.routings
 
 import io.ktor.server.application.*
 import io.ktor.server.plugins.requestvalidation.*

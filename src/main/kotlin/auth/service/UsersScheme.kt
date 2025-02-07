@@ -1,4 +1,4 @@
-package ru.alexbur.backend.service
+package ru.alexbur.backend.auth.service
 
 import kotlinx.coroutines.withContext
 import ru.alexbur.backend.utils.DispatcherProvider

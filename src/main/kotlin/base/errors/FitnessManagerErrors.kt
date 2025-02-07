@@ -13,7 +13,9 @@ enum class FitnessManagerErrors(val code: String, val message: String) {
     OLD_OTP("OldOtp", "Запросите новый одноразовый пароль по данному номеру телефона"),
     ERROR_OTP("ErrorOtp", "Неверный одноразовый пароль"),
     SESSION_NOT_FOUND("SessionNotFound", "У данного пользователя отсутствует сессия, необходимо авторизоваться заново"),
-    ERROR_REFRESH_TOKEN("ErrorRefreshToken", "Необходимо авторизоваться заново")
+    ERROR_REFRESH_TOKEN("ErrorRefreshToken", "Необходимо авторизоваться заново"),
+    UNKNOWN_ID("UnknownId", "Идентификатор не отправлен"),
+    UNKNOWN_SPORT_ACTIVITY("UnknownSportActivity", "Тренировка с таким идентификатором не найдена"),
 }
 
 fun createBadRequestError(error: FitnessManagerErrors): ErrorWrapperResponse {

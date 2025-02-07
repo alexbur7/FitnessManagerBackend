@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
 
 @Serializable
-class ErrorWrapperResponse(
-    @SerialName("error")
-    val error: JsonElement
+class SuccessResponse(
+    @SerialName("data")
+    val data: JsonElement
 )

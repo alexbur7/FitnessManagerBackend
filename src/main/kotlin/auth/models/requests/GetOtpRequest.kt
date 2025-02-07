@@ -1,4 +1,4 @@
-package auth.routings.requests
+package auth.models.requests
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

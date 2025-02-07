@@ -1,10 +1,12 @@
-package auth.routings.responses
+package auth.models.requests
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-internal class GetOtpResponse(
+internal class LoginRequest(
     @SerialName("user_id")
-    val userId: Long
+    val userId: Long,
+    @SerialName("otp")
+    val otp: String
 )

@@ -1,9 +1,9 @@
-package ru.alexbur.backend.auth.routings
+package ru.alexbur.backend.auth
 
-import auth.routings.requests.GetOtpRequest
-import auth.routings.requests.LoginRequest
-import auth.routings.responses.GetOtpResponse
-import auth.routings.responses.LoginResponse
+import auth.models.requests.GetOtpRequest
+import auth.models.requests.LoginRequest
+import auth.models.responses.GetOtpResponse
+import auth.models.responses.LoginResponse
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -17,6 +17,7 @@ import ru.alexbur.backend.auth.service.SessionService
 import ru.alexbur.backend.auth.service.UserService
 import ru.alexbur.backend.base.errors.FitnessManagerErrors
 import ru.alexbur.backend.base.errors.createBadRequestError
+import ru.alexbur.backend.base.success.toSuccess
 import ru.alexbur.backend.di.BaseModule
 import ru.alexbur.backend.utils.compareTimeWithCurrent
 import ru.alexbur.backend.utils.getCurrentTimestamp
@@ -51,7 +52,7 @@ fun Application.configureLoginRouting(dbConnection: Connection, jwtHelper: JwtHe
                     authService.update(createSession(userId))
                 }
             }
-            call.respond(HttpStatusCode.OK, GetOtpResponse(userId))
+            call.respond(HttpStatusCode.OK, GetOtpResponse(userId).toSuccess(GetOtpResponse.serializer()))
         }
 
         post("/login/send-otp") {
@@ -99,13 +100,13 @@ fun Application.configureLoginRouting(dbConnection: Connection, jwtHelper: JwtHe
             authService.delete(user.userId)
             val accessToken = jwtHelper.generateAccessToken(user.userId)
             val refreshToken = jwtHelper.generateRefreshToken(user.userId)
-            sessionService.create(user.userId, refreshToken, call.request.getUserAgent())
+            sessionService.create(user.userId, refreshToken, call.getUserAgent())
 
             call.respond(
                 HttpStatusCode.OK, LoginResponse(
                     accessToken = accessToken,
                     refreshToken = refreshToken,
-                )
+                ).toSuccess(LoginResponse.serializer())
             )
         }
 
@@ -120,7 +121,7 @@ fun Application.configureLoginRouting(dbConnection: Connection, jwtHelper: JwtHe
                 call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_USER))
                 return@post
             }
-            val session = sessionService.read(userId, call.request.getUserAgent())
+            val session = sessionService.read(userId, call.getUserAgent())
             if (session == null) {
                 call.respond(HttpStatusCode.Unauthorized, createBadRequestError(FitnessManagerErrors.SESSION_NOT_FOUND))
                 return@post
@@ -143,7 +144,7 @@ fun Application.configureLoginRouting(dbConnection: Connection, jwtHelper: JwtHe
                     HttpStatusCode.OK, RefreshTokenResponse(
                         accessToken = accessToken,
                         refreshToken = refreshToken
-                    )
+                    ).toSuccess(RefreshTokenResponse.serializer())
                 )
                 return@post
             }
@@ -153,7 +154,7 @@ fun Application.configureLoginRouting(dbConnection: Connection, jwtHelper: JwtHe
                 HttpStatusCode.OK, RefreshTokenResponse(
                     accessToken = accessToken,
                     refreshToken = null
-                )
+                ).toSuccess(RefreshTokenResponse.serializer())
             )
         }
     }

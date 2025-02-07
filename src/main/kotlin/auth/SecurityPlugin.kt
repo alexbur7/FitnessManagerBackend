@@ -15,7 +15,7 @@ fun Application.configureSecurity() {
     val audience = environment.config.property("jwt.audience").getString()
     val jwtRealm = environment.config.property("jwt.realm").getString()
     authentication {
-        jwt {
+        jwt("auth-jwt") {
             realm = jwtRealm
             verifier(
                 JWT.require(Algorithm.HMAC256(secret))

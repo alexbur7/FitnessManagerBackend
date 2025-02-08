@@ -5,12 +5,13 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import ru.alexbur.backend.auth.configureLoginRouting
 import ru.alexbur.backend.auth.configureSecurity
-import ru.alexbur.backend.db.connectToPostgres
+import ru.alexbur.backend.client_card.configureClientCardRouting
+import ru.alexbur.backend.db.getConnection
 import ru.alexbur.backend.di.BaseModule
 import ru.alexbur.backend.di.MappersModule
 import ru.alexbur.backend.plugins.configureMonitoring
 import ru.alexbur.backend.plugins.configureSerialization
-import ru.alexbur.backend.sport_activity.configureCalendarRouting
+import ru.alexbur.backend.sport_activity.configureSportActivityRouting
 
 fun main(args: Array<String>) {
     embeddedServer(
@@ -21,10 +22,10 @@ fun main(args: Array<String>) {
 }
 
 fun Application.module() {
-    val dbConnection = connectToPostgres(embedded = false)
     configureSerialization()
     configureSecurity()
     configureMonitoring()
-    configureLoginRouting(dbConnection, BaseModule.provideJwtGenerator(this))
-    configureCalendarRouting(dbConnection, MappersModule.provideSportActivityMapper())
+    configureLoginRouting(BaseModule.provideJwtGenerator(this))
+    configureSportActivityRouting(MappersModule.provideSportActivityMapper())
+    configureClientCardRouting()
 }

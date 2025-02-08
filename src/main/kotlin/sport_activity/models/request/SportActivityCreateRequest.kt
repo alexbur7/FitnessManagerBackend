@@ -7,8 +7,6 @@ import java.sql.Timestamp
 
 @Serializable
 class SportActivityCreateRequest(
-    @SerialName("name")
-    val name: String,
     @SerialName("start_time")
     @Serializable(with = TimestampSerializer::class)
     val startTime: Timestamp,
@@ -19,4 +17,6 @@ class SportActivityCreateRequest(
     val comment: String?,
     @SerialName("client_card_id")
     val clientCardId: Long,
+    @SerialName("is_ended")
+    val isEnded: Boolean = false,
 )

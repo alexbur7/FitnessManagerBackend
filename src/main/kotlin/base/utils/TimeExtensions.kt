@@ -1,4 +1,4 @@
-package ru.alexbur.backend.utils
+package ru.alexbur.backend.base.utils
 
 import java.sql.Timestamp
 import java.time.Instant

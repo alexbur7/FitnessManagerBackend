@@ -1,4 +1,4 @@
-package ru.alexbur.backend.utils
+package ru.alexbur.backend.base.utils
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers

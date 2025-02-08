@@ -7,7 +7,7 @@ import io.ktor.server.application.*
 import ru.alexbur.backend.auth.jwt.JwtHelper.Companion.ACCESS_TOKEN_LIFETIME
 import ru.alexbur.backend.auth.jwt.JwtHelper.Companion.REFRESH_TOKEN_LIFETIME
 import ru.alexbur.backend.auth.jwt.JwtHelper.Companion.USER_ID_KEY
-import ru.alexbur.backend.utils.getCurrentTimestamp
+import ru.alexbur.backend.base.utils.getCurrentTimestamp
 import java.util.*
 
 class JwtHelper(

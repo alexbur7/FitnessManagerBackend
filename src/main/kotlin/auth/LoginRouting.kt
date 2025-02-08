@@ -18,20 +18,20 @@ import ru.alexbur.backend.auth.service.UserService
 import ru.alexbur.backend.base.errors.FitnessManagerErrors
 import ru.alexbur.backend.base.errors.createBadRequestError
 import ru.alexbur.backend.base.success.toSuccess
+import ru.alexbur.backend.db.getConnection
 import ru.alexbur.backend.di.BaseModule
-import ru.alexbur.backend.utils.compareTimeWithCurrent
-import ru.alexbur.backend.utils.getCurrentTimestamp
-import ru.alexbur.backend.utils.getUserAgent
+import ru.alexbur.backend.base.utils.compareTimeWithCurrent
+import ru.alexbur.backend.base.utils.getCurrentTimestamp
+import ru.alexbur.backend.base.utils.getUserAgent
 import java.security.SecureRandom
-import java.sql.Connection
 
 private const val DEFAULT_COUNT_LOGIN = 5
 private const val BLOCKED_HOURS = 1L
 
-fun Application.configureLoginRouting(dbConnection: Connection, jwtHelper: JwtHelper) {
-    val userService = UserService(dbConnection, BaseModule.dispatcherProvider)
-    val authService = AuthService(dbConnection, BaseModule.dispatcherProvider)
-    val sessionService = SessionService(dbConnection, BaseModule.dispatcherProvider)
+fun Application.configureLoginRouting(jwtHelper: JwtHelper) {
+    val userService = UserService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val authService = AuthService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val sessionService = SessionService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     routing {
         post("/login/get-otp") {
             val request = call.receive<GetOtpRequest>()

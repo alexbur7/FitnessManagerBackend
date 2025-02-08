@@ -1,4 +1,4 @@
-package ru.alexbur.backend.utils
+package ru.alexbur.backend.base.utils
 
 import io.ktor.http.*
 import io.ktor.server.auth.*

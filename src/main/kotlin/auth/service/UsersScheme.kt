@@ -1,7 +1,7 @@
 package ru.alexbur.backend.auth.service
 
 import kotlinx.coroutines.withContext
-import ru.alexbur.backend.utils.DispatcherProvider
+import ru.alexbur.backend.base.utils.DispatcherProvider
 import java.sql.Connection
 import java.sql.Statement
 
@@ -11,8 +11,8 @@ data class User(
 )
 
 class UserService(
-    private val connection: Connection,
     private val dispatcherProvider: DispatcherProvider,
+    private val getConnection: () -> Connection,
 ) {
     companion object {
         private const val CREATE_TABLE_USER =
@@ -23,42 +23,51 @@ class UserService(
     }
 
     init {
-        val statement = connection.createStatement()
-        statement.executeUpdate(CREATE_TABLE_USER)
+        getConnection().use { connection ->
+            connection.createStatement().use { statement ->
+                statement.executeUpdate(CREATE_TABLE_USER)
+            }
+        }
     }
 
     suspend fun create(phone: String): Long = withContext(dispatcherProvider.io()) {
-        val statement = connection.prepareStatement(INSERT_USER, Statement.RETURN_GENERATED_KEYS)
-        statement.setString(1, phone)
-        statement.executeUpdate()
-        val generatedKeys = statement.generatedKeys
-        if (generatedKeys.next()) {
-            generatedKeys.getLong(1)
-        } else {
-            val selectStatement = connection.prepareStatement("SELECT id FROM USERS WHERE phone = ?;")
-            selectStatement.setString(1, phone)
-            val selectResultSet = selectStatement.executeQuery()
-            if (selectResultSet.next()) {
-                selectResultSet.getLong("id")
-            } else {
-                throw IllegalStateException("Unknown error")
+        getConnection().use { connection ->
+            connection.prepareStatement(INSERT_USER, Statement.RETURN_GENERATED_KEYS).use { statement ->
+                statement.setString(1, phone)
+                statement.executeUpdate()
+                val generatedKeys = statement.generatedKeys
+                if (generatedKeys.next()) {
+                    generatedKeys.getLong(1)
+                } else {
+                    val selectStatement = connection.prepareStatement("SELECT id FROM USERS WHERE phone = ?;")
+                    selectStatement.setString(1, phone)
+                    val selectResultSet = selectStatement.executeQuery()
+                    if (selectResultSet.next()) {
+                        selectResultSet.getLong("id")
+                    } else {
+                        throw IllegalStateException("Unknown error")
+                    }
+                }
             }
         }
     }
 
     suspend fun read(userId: Long): User? = withContext(dispatcherProvider.io()) {
-        val statement = connection.prepareStatement(SELECT_CODE_BY_ID)
-        statement.setLong(1, userId)
-        val resultSet = statement.executeQuery()
+        getConnection().use { connection ->
+            connection.prepareStatement(SELECT_CODE_BY_ID).use { statement ->
+                statement.setLong(1, userId)
+                val resultSet = statement.executeQuery()
 
-        if (resultSet.next()) {
-            val phone = resultSet.getString("phone")
-            User(
-                userId = userId,
-                phone = phone
-            )
-        } else {
-            null
+                if (resultSet.next()) {
+                    val phone = resultSet.getString("phone")
+                    User(
+                        userId = userId,
+                        phone = phone
+                    )
+                } else {
+                    null
+                }
+            }
         }
     }
 }

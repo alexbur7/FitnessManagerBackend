@@ -4,7 +4,7 @@ import io.ktor.server.application.*
 import java.sql.Connection
 import java.sql.DriverManager
 
-fun Application.connectToPostgres(embedded: Boolean): Connection {
+fun Application.getConnection(embedded: Boolean): Connection {
     Class.forName("org.postgresql.Driver")
     if (embedded) {
         log.info("Using embedded H2 database for testing; replace this flag to use postgres")

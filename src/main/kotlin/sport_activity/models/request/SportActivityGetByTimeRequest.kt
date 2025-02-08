@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 import java.sql.Timestamp
 
 @Serializable
-class SportActivityGetByTimeRequest(
+data class SportActivityGetByTimeRequest(
     @SerialName("start_time")
     @Serializable(with = TimestampSerializer::class)
     val startTime: Timestamp,

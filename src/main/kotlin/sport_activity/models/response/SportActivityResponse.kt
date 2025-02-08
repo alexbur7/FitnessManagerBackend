@@ -11,8 +11,6 @@ class SportActivityResponse(
     val id: Long,
     @SerialName("user_id")
     val userId: Long,
-    @SerialName("name")
-    val name: String,
     @SerialName("start_time")
     @Serializable(with = TimestampSerializer::class)
     val startTime: Timestamp,

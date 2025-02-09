@@ -3,7 +3,6 @@ package ru.alexbur.backend.client_card
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
-import io.ktor.server.plugins.requestvalidation.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -13,22 +12,18 @@ import ru.alexbur.backend.base.success.toSuccess
 import ru.alexbur.backend.base.utils.DEFAULT_LIMIT
 import ru.alexbur.backend.base.utils.DEFAULT_OFFSET
 import ru.alexbur.backend.base.utils.getUserId
+import ru.alexbur.backend.client_card.mapper.ClientCardMapper
 import ru.alexbur.backend.client_card.models.request.ClientCardCreateRequest
 import ru.alexbur.backend.client_card.models.response.ClientCardFullResponse
 import ru.alexbur.backend.client_card.models.response.ClientsCardResponse
 import ru.alexbur.backend.client_card.service.ClientCardFull
 import ru.alexbur.backend.client_card.service.ClientsCardService
-import ru.alexbur.backend.db.getConnection
-import ru.alexbur.backend.di.BaseModule
 import ru.alexbur.backend.di.MappersModule
 
-fun Application.configureClientCardRouting() {
-
-    val mapper = MappersModule.provideClientCardMapper()
-    val service = ClientsCardService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
-
-    setupValidators()
-
+fun Application.configureClientCardRouting(
+    service: ClientsCardService,
+    mapper: ClientCardMapper
+) {
     routing {
         authenticate("auth-jwt") {
             post("/client-card/create") {
@@ -100,24 +95,20 @@ fun Application.configureClientCardRouting() {
     }
 }
 
-private fun Application.setupValidators() {
-    install(RequestValidation) {
-        validate<ClientCardCreateRequest> { request ->
-            val errorMessage = mutableListOf<String>()
-            if (request.weightGm != null && request.weightGm <= 0) {
-                errorMessage.add("Weight  must be greater than 0.")
-            }
-
-            if (request.age != null && request.age <= 0) {
-                errorMessage.add("Age must be greater than 0.")
-            }
-            if (errorMessage.isEmpty()) {
-                ValidationResult.Valid
-            } else {
-                ValidationResult.Invalid(errorMessage.joinToString(separator = " "))
-            }
-        }
+suspend fun RoutingContext.checkClientCard(
+    service: ClientsCardService,
+    clientCardId: Long,
+    userId: Long
+): Boolean {
+    val clientCard = service.readById(clientCardId, userId)
+    if (clientCard == null) {
+        call.respond(
+            HttpStatusCode.BadRequest,
+            createBadRequestError(FitnessManagerErrors.UNKNOWN_CLIENT_CARD)
+        )
+        return true
     }
+    return false
 }
 
 private suspend fun RoutingContext.getClientCard(

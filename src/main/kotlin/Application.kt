@@ -9,13 +9,22 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import ru.alexbur.backend.auth.configureLoginRouting
 import ru.alexbur.backend.auth.configureSecurity
+import ru.alexbur.backend.auth.service.AuthService
+import ru.alexbur.backend.auth.service.SessionService
+import ru.alexbur.backend.auth.service.UserService
 import ru.alexbur.backend.base.errors.createBadRequestError
+import ru.alexbur.backend.base.validators.setupValidators
 import ru.alexbur.backend.client_card.configureClientCardRouting
+import ru.alexbur.backend.client_card.service.ClientsCardService
+import ru.alexbur.backend.db.getConnection
 import ru.alexbur.backend.di.BaseModule
 import ru.alexbur.backend.di.MappersModule
+import ru.alexbur.backend.events.configureEventRouting
+import ru.alexbur.backend.events.service.EventService
+import ru.alexbur.backend.linking.configureLinkingRouting
+import ru.alexbur.backend.linking.service.LinkingService
 import ru.alexbur.backend.plugins.configureMonitoring
 import ru.alexbur.backend.plugins.configureSerialization
-import ru.alexbur.backend.sport_activity.configureSportActivityRouting
 
 fun main(args: Array<String>) {
     embeddedServer(
@@ -35,10 +44,20 @@ fun Application.module() {
         }
     }
 
+    val mapper = MappersModule.provideClientCardMapper()
+
+    val clientCardService = ClientsCardService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val linkingService = LinkingService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val userService = UserService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val eventService = EventService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val authService = AuthService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val sessionService = SessionService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     configureSerialization()
     configureSecurity()
     configureMonitoring()
-    configureLoginRouting(BaseModule.provideJwtGenerator(this))
-    configureSportActivityRouting(MappersModule.provideSportActivityMapper())
-    configureClientCardRouting()
+    setupValidators()
+    configureLoginRouting(BaseModule.provideJwtGenerator(this), userService, authService, sessionService)
+    configureEventRouting(MappersModule.provideSportActivityMapper(), clientCardService, eventService)
+    configureClientCardRouting(clientCardService, mapper)
+    configureLinkingRouting(linkingService, clientCardService, userService, BaseModule.dispatcherProvider)
 }

@@ -1,4 +1,4 @@
-package ru.alexbur.backend.sport_activity
+package ru.alexbur.backend.events
 
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -10,43 +10,34 @@ import ru.alexbur.backend.base.errors.FitnessManagerErrors
 import ru.alexbur.backend.base.errors.createBadRequestError
 import ru.alexbur.backend.base.success.toSuccess
 import ru.alexbur.backend.base.utils.getUserId
+import ru.alexbur.backend.client_card.checkClientCard
 import ru.alexbur.backend.client_card.service.ClientsCardService
-import ru.alexbur.backend.db.getConnection
-import ru.alexbur.backend.di.BaseModule
-import ru.alexbur.backend.sport_activity.mapper.SportActivityMapper
-import ru.alexbur.backend.sport_activity.models.request.SportActivityCreateRequest
-import ru.alexbur.backend.sport_activity.models.request.SportActivityGetByTimeRequest
-import ru.alexbur.backend.sport_activity.models.response.SportActivityByTimeResponse
-import ru.alexbur.backend.sport_activity.models.response.SportActivityResponse
-import ru.alexbur.backend.sport_activity.service.SportActivity
-import ru.alexbur.backend.sport_activity.service.SportActivityService
+import ru.alexbur.backend.events.mapper.EventMapper
+import ru.alexbur.backend.events.models.request.EventCreateRequest
+import ru.alexbur.backend.events.models.request.EventGetByTimeRequest
+import ru.alexbur.backend.events.models.response.EventByTimeResponse
+import ru.alexbur.backend.events.models.response.EventResponse
+import ru.alexbur.backend.events.service.Event
+import ru.alexbur.backend.events.service.EventService
 
-fun Application.configureSportActivityRouting(
-    mapper: SportActivityMapper
+fun Application.configureEventRouting(
+    mapper: EventMapper,
+    clientCardService: ClientsCardService,
+    eventService: EventService
 ) {
-    val sportActivityService = SportActivityService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
-    val clientCardService = ClientsCardService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
-
     routing {
         authenticate("auth-jwt") {
-            post("/sport-activity/create") {
+            post("/event/create") {
                 val userId = call.getUserId() ?: return@post
-                val request = call.receive<SportActivityCreateRequest>()
+                val request = call.receive<EventCreateRequest>()
                 if (request.startTime >= request.endTime) {
                     call.respond(
                         HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.INVALID_END_TIME)
                     )
                     return@post
                 }
-                val clientCard = clientCardService.readById(request.clientCardId, userId)
-                if (clientCard == null) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        createBadRequestError(FitnessManagerErrors.UNKNOWN_CLIENT_CARD)
-                    )
-                    return@post
-                }
-                val hasActivities = sportActivityService.hasActivities(
+                if (checkClientCard(clientCardService, request.clientCardId, userId)) return@post
+                val hasActivities = eventService.hasActivities(
                     userId = userId,
                     startTime = request.startTime,
                     endTime = request.endTime,
@@ -60,61 +51,61 @@ fun Application.configureSportActivityRouting(
                     return@post
                 }
 
-                val id = sportActivityService.create(mapper.map(request, userId))
-                val data = getSportActivity(sportActivityService, id, userId) ?: return@post
-                sendSportActivityResponse(mapper, data)
+                val id = eventService.create(mapper.map(request, userId))
+                val data = getEvent(eventService, id, userId) ?: return@post
+                sendEventResponse(mapper, data)
             }
 
-            post("/sport-activity/get-by-time") {
+            post("/event/get-by-time") {
                 val userId = call.getUserId() ?: return@post
-                val request = call.receive<SportActivityGetByTimeRequest>()
-                val result = sportActivityService.readByTime(
+                val request = call.receive<EventGetByTimeRequest>()
+                val result = eventService.readByTime(
                     userId = userId,
                     startTime = request.startTime,
                     endTime = request.endTime,
                 )
-                val response = SportActivityByTimeResponse(
+                val response = EventByTimeResponse(
                     activities = result.map { data -> mapper.map(data) }
-                ).toSuccess(SportActivityByTimeResponse.serializer())
+                ).toSuccess(EventByTimeResponse.serializer())
                 call.respond(HttpStatusCode.OK, response)
             }
 
-            get("/sport-activity/{id}") {
+            get("/event/{id}") {
                 val userId = call.getUserId() ?: return@get
                 val id = call.parameters["id"]?.toLong()
                 if (id == null) {
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_ID))
                     return@get
                 }
-                val data = getSportActivity(sportActivityService, id, userId) ?: return@get
-                sendSportActivityResponse(mapper, data)
+                val data = getEvent(eventService, id, userId) ?: return@get
+                sendEventResponse(mapper, data)
             }
 
-            put("/sport-activity/{id}") {
+            put("/event/{id}") {
                 val userId = call.getUserId() ?: return@put
-                val request = call.receive<SportActivityCreateRequest>()
+                val request = call.receive<EventCreateRequest>()
                 val id = call.parameters["id"]?.toLong()
                 if (id == null) {
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_ID))
                     return@put
                 }
-                val isUpdate = sportActivityService.update(id, mapper.map(request, userId))
+                val isUpdate = eventService.update(id, mapper.map(request, userId))
                 if (!isUpdate) {
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.ERROR_UPDATE))
                     return@put
                 }
-                val data = getSportActivity(sportActivityService, id, userId) ?: return@put
-                sendSportActivityResponse(mapper, data)
+                val data = getEvent(eventService, id, userId) ?: return@put
+                sendEventResponse(mapper, data)
             }
 
-            delete("/sport-activity/{id}") {
+            delete("/event/{id}") {
                 val userId = call.getUserId() ?: return@delete
                 val id = call.parameters["id"]?.toLong()
                 if (id == null) {
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_ID))
                     return@delete
                 }
-                val isDeleted = sportActivityService.delete(id, userId)
+                val isDeleted = eventService.delete(id, userId)
                 if (!isDeleted) {
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.ERROR_DELETE))
                     return@delete
@@ -125,19 +116,19 @@ fun Application.configureSportActivityRouting(
     }
 }
 
-private suspend fun RoutingContext.sendSportActivityResponse(mapper: SportActivityMapper, data: SportActivity) {
-    val response = mapper.map(data).toSuccess(SportActivityResponse.serializer())
+private suspend fun RoutingContext.sendEventResponse(mapper: EventMapper, data: Event) {
+    val response = mapper.map(data).toSuccess(EventResponse.serializer())
     call.respond(HttpStatusCode.OK, response)
 }
 
-private suspend fun RoutingContext.getSportActivity(
-    service: SportActivityService,
+private suspend fun RoutingContext.getEvent(
+    service: EventService,
     id: Long,
     userId: Long
-): SportActivity? {
+): Event? {
     val data = service.readById(id, userId)
     if (data == null) {
-        call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_SPORT_ACTIVITY))
+        call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_EVENT))
         return null
     }
     return data

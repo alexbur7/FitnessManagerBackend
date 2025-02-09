@@ -5,9 +5,10 @@ import ru.alexbur.backend.base.utils.DispatcherProvider
 import java.sql.Connection
 import java.sql.Statement
 
-data class User(
+data class UserInfo(
     val userId: Long,
     val phone: String,
+    val photoUrl: String?,
 )
 
 class UserService(
@@ -16,10 +17,11 @@ class UserService(
 ) {
     companion object {
         private const val CREATE_TABLE_USER =
-            "CREATE TABLE IF NOT EXISTS USERS (id SERIAL PRIMARY KEY, phone CHAR(11) NOT NULL UNIQUE);"
+            "CREATE TABLE IF NOT EXISTS USERS (id SERIAL PRIMARY KEY, phone CHAR(11) NOT NULL UNIQUE, " +
+                    "photo_url TEXT DEFAULT NULL);"
         private const val INSERT_USER = "INSERT INTO USERS (phone) VALUES (?) " +
                 "ON CONFLICT (phone) DO NOTHING RETURNING id;"
-        private const val SELECT_CODE_BY_ID = "SELECT phone FROM USERS WHERE id = ?"
+        private const val SELECT_CODE_BY_ID = "SELECT * FROM USERS WHERE id = ?"
     }
 
     init {
@@ -52,7 +54,7 @@ class UserService(
         }
     }
 
-    suspend fun read(userId: Long): User? = withContext(dispatcherProvider.io()) {
+    suspend fun read(userId: Long): UserInfo? = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->
             connection.prepareStatement(SELECT_CODE_BY_ID).use { statement ->
                 statement.setLong(1, userId)
@@ -60,9 +62,11 @@ class UserService(
 
                 if (resultSet.next()) {
                     val phone = resultSet.getString("phone")
-                    User(
+                    val photoUrl = resultSet.getString("photo_url")
+                    UserInfo(
                         userId = userId,
-                        phone = phone
+                        phone = phone,
+                        photoUrl = photoUrl,
                     )
                 } else {
                     null

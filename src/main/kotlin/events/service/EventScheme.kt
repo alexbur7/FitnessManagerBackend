@@ -1,4 +1,4 @@
-package ru.alexbur.backend.sport_activity.service
+package ru.alexbur.backend.events.service
 
 import kotlinx.coroutines.withContext
 import ru.alexbur.backend.base.utils.DispatcherProvider
@@ -7,7 +7,7 @@ import java.sql.PreparedStatement
 import java.sql.Statement
 import java.sql.Timestamp
 
-data class SportActivityCreate(
+data class EventCreate(
     val userId: Long,
     val startTime: Timestamp,
     val endTime: Timestamp,
@@ -16,7 +16,7 @@ data class SportActivityCreate(
     val isEnded: Boolean,
 )
 
-data class SportActivity(
+data class Event(
     val id: Long,
     val userId: Long,
     val startTime: Timestamp,
@@ -26,27 +26,27 @@ data class SportActivity(
     val clientCardId: Long,
 )
 
-class SportActivityService(
+class EventService(
     private val dispatcherProvider: DispatcherProvider,
     private val getConnection: () -> Connection,
 ) {
     companion object {
         private const val CREATE_TABLE =
-            "CREATE TABLE IF NOT EXISTS SportActivities (id SERIAL PRIMARY KEY, user_id INT NOT NULL, " +
+            "CREATE TABLE IF NOT EXISTS EVENTS (id SERIAL PRIMARY KEY, user_id INT NOT NULL, " +
                     "start_time TIMESTAMP NOT NULL, " +
                     "end_time TIMESTAMP NOT NULL, is_ended BOOLEAN DEFAULT FALSE, " +
                     "comment TEXT, client_card_id INT NOT NULL);"
-        private const val INSERT = "INSERT INTO SportActivities (user_id, start_time, end_time, " +
+        private const val INSERT = "INSERT INTO EVENTS (user_id, start_time, end_time, " +
                 "comment, client_card_id, is_ended) VALUES (?, ?, ?, ?, ?, ?);"
-        private const val SELECT_BY_ID = "SELECT * FROM SportActivities WHERE id = ? AND user_id = ?;"
-        private const val SELECT_BY_TIME = "SELECT * FROM SportActivities WHERE user_id = ? " +
+        private const val SELECT_BY_ID = "SELECT * FROM EVENTS WHERE id = ? AND user_id = ?;"
+        private const val SELECT_BY_TIME = "SELECT * FROM EVENTS WHERE user_id = ? " +
                 "AND start_time >= ? AND end_time <= ?;"
 
-        private const val SELECT_BY_TIME_WITH_CLIENT_ID = "SELECT id FROM SportActivities WHERE user_id = ? " +
+        private const val SELECT_BY_TIME_WITH_CLIENT_ID = "SELECT id FROM EVENTS WHERE user_id = ? " +
                 "AND client_card_id = ? AND start_time < ? AND end_time > ?;"
-        private const val UPDATE = "UPDATE SportActivities SET start_time = ?, end_time = ?, comment = ?, " +
+        private const val UPDATE = "UPDATE EVENTS SET start_time = ?, end_time = ?, comment = ?, " +
                 "client_card_id = ?, is_ended = ? WHERE id = ? AND user_id = ?"
-        private const val DELETE = "DELETE FROM SportActivities WHERE id = ? AND user_id = ?"
+        private const val DELETE = "DELETE FROM EVENTS WHERE id = ? AND user_id = ?"
     }
 
     init {
@@ -57,7 +57,7 @@ class SportActivityService(
         }
     }
 
-    suspend fun create(activity: SportActivityCreate): Long = withContext(dispatcherProvider.io()) {
+    suspend fun create(activity: EventCreate): Long = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->
             connection.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS).use { statement: PreparedStatement ->
                 statement.setLong(1, activity.userId)
@@ -77,7 +77,7 @@ class SportActivityService(
         }
     }
 
-    suspend fun readById(id: Long, userId: Long): SportActivity? = withContext(dispatcherProvider.io()) {
+    suspend fun readById(id: Long, userId: Long): Event? = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->
             connection.prepareStatement(SELECT_BY_ID).use { statement: PreparedStatement ->
                 statement.setLong(1, id)
@@ -91,7 +91,7 @@ class SportActivityService(
                     val comment = resultSet.getString("comment")
                     val isEnded = resultSet.getBoolean("is_ended")
                     val clientCardId = resultSet.getLong("client_card_id")
-                    SportActivity(
+                    Event(
                         id = id,
                         userId = userId,
                         startTime = startTime,
@@ -111,14 +111,14 @@ class SportActivityService(
         userId: Long,
         startTime: Timestamp,
         endTime: Timestamp
-    ): List<SportActivity> = withContext(dispatcherProvider.io()) {
+    ): List<Event> = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->
             connection.prepareStatement(SELECT_BY_TIME).use { statement: PreparedStatement ->
                 statement.setLong(1, userId)
                 statement.setTimestamp(2, startTime)
                 statement.setTimestamp(3, endTime)
                 val resultSet = statement.executeQuery()
-                val result = mutableListOf<SportActivity>()
+                val result = mutableListOf<Event>()
 
                 while (resultSet.next()) {
                     val id = resultSet.getLong("id")
@@ -129,7 +129,7 @@ class SportActivityService(
                     val isEnded = resultSet.getBoolean("is_ended")
                     val clientCardId = resultSet.getLong("client_card_id")
                     result.add(
-                        SportActivity(
+                        Event(
                             id = id,
                             userId = userId,
                             startTime = startTime,
@@ -164,7 +164,7 @@ class SportActivityService(
         }
     }
 
-    suspend fun update(id: Long, activity: SportActivityCreate): Boolean = withContext(dispatcherProvider.io()) {
+    suspend fun update(id: Long, activity: EventCreate): Boolean = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->
             connection.prepareStatement(UPDATE, Statement.RETURN_GENERATED_KEYS).use { statement: PreparedStatement ->
                 statement.setTimestamp(1, activity.startTime)

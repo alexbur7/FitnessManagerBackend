@@ -16,6 +16,13 @@ data class ClientCardCreate(
     val coachId: Long,
 )
 
+data class ClientCardUpdate(
+    val phone: String,
+    val userId: Long,
+    val coachId: Long,
+    val photoUrl: String?,
+)
+
 data class ClientCard(
     val id: Long,
     val name: String,
@@ -49,6 +56,8 @@ class ClientsCardService(
         const val INSERT = "INSERT INTO ClientsCard (coach_id, name, age, weight_gm, phone) VALUES (?, ?, ?, ?, ?);"
         const val SELECT_BY_ID = "SELECT * FROM ClientsCard WHERE id = ? AND coach_id = ?;"
         private const val UPDATE = "UPDATE ClientsCard SET name = ?, age = ?, weight_gm = ?, phone = ? " +
+                "WHERE id = ? AND coach_id = ?"
+        private const val UPDATE_USER_DATA = "UPDATE ClientsCard SET phone = ?, user_id = ?, photo_url = ? " +
                 "WHERE id = ? AND coach_id = ?"
         private const val DELETE = "DELETE FROM ClientsCard WHERE id = ? AND coach_id = ?"
     }
@@ -187,6 +196,19 @@ class ClientsCardService(
                 updatedCount > 0
             }
         }
+    }
+
+    fun update(id: Long, clientCard: ClientCardUpdate, connection: Connection) {
+        connection.prepareStatement(UPDATE_USER_DATA, Statement.RETURN_GENERATED_KEYS)
+            .use { statement: PreparedStatement ->
+                statement.setString(1, clientCard.phone)
+                statement.setLong(2, clientCard.userId)
+                statement.setString(3, clientCard.photoUrl)
+                statement.setLong(4, id)
+                statement.setLong(5, clientCard.coachId)
+                val updatedCount = statement.executeUpdate()
+                if (updatedCount <= 0) throw IllegalStateException("Error")
+            }
     }
 
     suspend fun delete(id: Long, coachId: Long): Boolean = withContext(dispatcherProvider.io()) {

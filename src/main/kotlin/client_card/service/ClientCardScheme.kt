@@ -40,6 +40,7 @@ class ClientsCardService(
     private val dispatcherProvider: DispatcherProvider,
     private val getConnection: () -> Connection,
 ) {
+
     private companion object {
         const val CREATE_TABLE =
             "CREATE TABLE IF NOT EXISTS ClientsCard (id SERIAL PRIMARY KEY, coach_id INT NOT NULL, " +
@@ -47,6 +48,9 @@ class ClientsCardService(
                     "age INT DEFAULT NULL, weight_gm INT DEFAULT NULL, phone CHAR(11) DEFAULT NULL);"
         const val INSERT = "INSERT INTO ClientsCard (coach_id, name, age, weight_gm, phone) VALUES (?, ?, ?, ?, ?);"
         const val SELECT_BY_ID = "SELECT * FROM ClientsCard WHERE id = ? AND coach_id = ?;"
+        private const val UPDATE = "UPDATE ClientsCard SET name = ?, age = ?, weight_gm = ?, phone = ? " +
+                "WHERE id = ? AND coach_id = ?"
+        private const val DELETE = "DELETE FROM ClientsCard WHERE id = ? AND coach_id = ?"
     }
 
     init {
@@ -72,11 +76,7 @@ class ClientsCardService(
                 } else {
                     statement.setInt(4, clientCard.weightGm)
                 }
-                if (clientCard.phone == null) {
-                    statement.setNull(5, Types.VARCHAR)
-                } else {
-                    statement.setString(5, clientCard.phone)
-                }
+                statement.setString(5, clientCard.phone)
                 statement.executeUpdate()
                 val generatedKeys = statement.generatedKeys
                 return@withContext if (generatedKeys.next()) {
@@ -98,7 +98,7 @@ class ClientsCardService(
                 if (resultSet.next()) {
                     val name = resultSet.getString("name")
                     val photoUrl = resultSet.getString("photo_url")
-                    val age = resultSet.getInt("age")
+                    val age = resultSet.getIntOrNull("age")
                     val weight = resultSet.getIntOrNull("weight_gm")
                     val phone = resultSet.getString("phone")
 
@@ -162,6 +162,40 @@ class ClientsCardService(
                     totalCount = totalCount,
                     clients = clients.toList()
                 )
+            }
+        }
+    }
+
+    suspend fun update(id: Long, clientCard: ClientCardCreate): Boolean = withContext(dispatcherProvider.io()) {
+        getConnection().use { connection ->
+            connection.prepareStatement(UPDATE, Statement.RETURN_GENERATED_KEYS).use { statement: PreparedStatement ->
+                statement.setString(1, clientCard.name)
+                if (clientCard.age == null) {
+                    statement.setNull(2, Types.INTEGER)
+                } else {
+                    statement.setInt(2, clientCard.age)
+                }
+                if (clientCard.weightGm == null) {
+                    statement.setNull(3, Types.INTEGER)
+                } else {
+                    statement.setInt(3, clientCard.weightGm)
+                }
+                statement.setString(4, clientCard.phone)
+                statement.setLong(5, id)
+                statement.setLong(6, clientCard.coachId)
+                val updatedCount = statement.executeUpdate()
+                updatedCount > 0
+            }
+        }
+    }
+
+    suspend fun delete(id: Long, coachId: Long): Boolean = withContext(dispatcherProvider.io()) {
+        getConnection().use { connection ->
+            connection.prepareStatement(DELETE).use { statement: PreparedStatement ->
+                statement.setLong(1, id)
+                statement.setLong(2, coachId)
+                val deletedCount = statement.executeUpdate()
+                deletedCount > 0
             }
         }
     }

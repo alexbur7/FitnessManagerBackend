@@ -24,12 +24,16 @@ enum class FitnessManagerErrors(val code: String, val message: String) {
 }
 
 fun createBadRequestError(error: FitnessManagerErrors): ErrorWrapperResponse {
+    return createBadRequestError(error.code, error.message)
+}
+
+fun createBadRequestError(code: String, message: String): ErrorWrapperResponse {
     return ErrorWrapperResponse(
         error = BaseModule.json.encodeToJsonElement(
             ErrorResponse.serializer(),
             ErrorResponse(
-                code = error.code,
-                message = error.message
+                code = code,
+                message = message
             )
         )
     )

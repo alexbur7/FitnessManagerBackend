@@ -40,7 +40,7 @@ class JwtHelper(
     }
 
     internal companion object {
-        const val ACCESS_TOKEN_LIFETIME = 1000 * 60 * 15L // 15 минут
+        const val ACCESS_TOKEN_LIFETIME = 1000 * 60 * 60 * 15L // 15 минут
         const val REFRESH_TOKEN_LIFETIME = 1000 * 60 * 60 * 24 * 30L // 30 дней
         const val USER_ID_KEY = "user_id"
     }

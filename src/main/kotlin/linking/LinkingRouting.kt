@@ -11,6 +11,7 @@ import ru.alexbur.backend.auth.service.UserInfo
 import ru.alexbur.backend.auth.service.UserService
 import ru.alexbur.backend.base.errors.FitnessManagerErrors
 import ru.alexbur.backend.base.errors.createBadRequestError
+import ru.alexbur.backend.base.sql.transaction
 import ru.alexbur.backend.base.success.toSuccess
 import ru.alexbur.backend.base.utils.DispatcherProvider
 import ru.alexbur.backend.base.utils.compareTimeWithCurrent
@@ -19,7 +20,6 @@ import ru.alexbur.backend.base.utils.getUserId
 import ru.alexbur.backend.client_card.checkClientCard
 import ru.alexbur.backend.client_card.service.ClientCardUpdate
 import ru.alexbur.backend.client_card.service.ClientsCardService
-import ru.alexbur.backend.db.getConnection
 import ru.alexbur.backend.linking.models.request.LinkingConnectRequest
 import ru.alexbur.backend.linking.models.request.LinkingCreateRequest
 import ru.alexbur.backend.linking.models.response.LinkingInfoResponse
@@ -109,9 +109,7 @@ private fun Application.bind(
     userInfo: UserInfo,
     linkingService: LinkingService,
 ) {
-    val connection = getConnection(embedded = false)
-    try {
-        connection.autoCommit = false
+    transaction { connection ->
         clientsCardService.update(
             id = linkingInfo.clientCardId,
             clientCard = ClientCardUpdate(
@@ -122,14 +120,7 @@ private fun Application.bind(
             ),
             connection = connection
         )
-
         linkingService.delete(linkingInfo.id, connection)
-        connection.commit()
-    } catch (e: Throwable) {
-        connection.rollback()
-        throw e
-    } finally {
-        connection.close()
     }
 }
 

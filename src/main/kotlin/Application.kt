@@ -21,6 +21,8 @@ import ru.alexbur.backend.di.BaseModule
 import ru.alexbur.backend.di.MappersModule
 import ru.alexbur.backend.events.configureEventRouting
 import ru.alexbur.backend.events.service.EventService
+import ru.alexbur.backend.history_weight.configureHistoryWeightRouting
+import ru.alexbur.backend.history_weight.service.HistoryWeightService
 import ru.alexbur.backend.linking.configureLinkingRouting
 import ru.alexbur.backend.linking.service.LinkingService
 import ru.alexbur.backend.plugins.configureMonitoring
@@ -45,6 +47,7 @@ fun Application.module() {
     }
 
     val mapper = MappersModule.provideClientCardMapper()
+    val historyWeightMapper = MappersModule.provideHistoryWeightMapper()
 
     val clientCardService = ClientsCardService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val linkingService = LinkingService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
@@ -52,12 +55,14 @@ fun Application.module() {
     val eventService = EventService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val authService = AuthService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val sessionService = SessionService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val historyWeightService = HistoryWeightService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     configureSerialization()
     configureSecurity()
     configureMonitoring()
     setupValidators()
     configureLoginRouting(BaseModule.provideJwtGenerator(this), userService, authService, sessionService)
     configureEventRouting(MappersModule.provideSportActivityMapper(), clientCardService, eventService)
-    configureClientCardRouting(clientCardService, mapper)
+    configureClientCardRouting(clientCardService, mapper, historyWeightService, BaseModule.dispatcherProvider)
     configureLinkingRouting(linkingService, clientCardService, userService, BaseModule.dispatcherProvider)
+    configureHistoryWeightRouting(historyWeightService, clientCardService, historyWeightMapper)
 }

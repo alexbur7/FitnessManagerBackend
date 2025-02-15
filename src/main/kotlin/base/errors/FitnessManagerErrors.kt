@@ -25,6 +25,10 @@ enum class FitnessManagerErrors(val code: String, val message: String) {
     EXPIRED_LINKING_CODE(
         "ExpiredLinkingCode", "У вашего кода истекло время использования. Попросите тренера сделать новый"
     ),
+    UNKNOWN_HISTORY_WEIGHT("UnknownHistoryWeight", "Неизвестный идентификатор веса"),
+    EDITING_IS_PROHIBITED("EditingIsProhibited", "Историю веса запрещено редактировать всем, кроме тренера"),
+    DONT_EDITING_WEIGHT("DontEditingWeight", "Вес не удалось изменить"),
+    DONT_DELETED_WEIGHT("DontDeletedWeight", "Вес не удалось удалить"),
 }
 
 fun createBadRequestError(error: FitnessManagerErrors): ErrorWrapperResponse {

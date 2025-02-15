@@ -70,34 +70,32 @@ class ClientsCardService(
         }
     }
 
-    suspend fun create(clientCard: ClientCardCreate): Long = withContext(dispatcherProvider.io()) {
-        getConnection().use { connection ->
-            connection.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS).use { statement: PreparedStatement ->
-                statement.setLong(1, clientCard.coachId)
-                statement.setString(2, clientCard.name)
-                if (clientCard.age == null) {
-                    statement.setNull(3, Types.INTEGER)
-                } else {
-                    statement.setInt(3, clientCard.age)
-                }
-                if (clientCard.weightGm == null) {
-                    statement.setNull(4, Types.INTEGER)
-                } else {
-                    statement.setInt(4, clientCard.weightGm)
-                }
-                statement.setString(5, clientCard.phone)
-                statement.executeUpdate()
-                val generatedKeys = statement.generatedKeys
-                return@withContext if (generatedKeys.next()) {
-                    generatedKeys.getLong(1)
-                } else {
-                    throw IllegalStateException("Unknown error")
-                }
+    fun create(clientCard: ClientCardCreate, connection: Connection): Long {
+        connection.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS).use { statement: PreparedStatement ->
+            statement.setLong(1, clientCard.coachId)
+            statement.setString(2, clientCard.name)
+            if (clientCard.age == null) {
+                statement.setNull(3, Types.INTEGER)
+            } else {
+                statement.setInt(3, clientCard.age)
+            }
+            if (clientCard.weightGm == null) {
+                statement.setNull(4, Types.INTEGER)
+            } else {
+                statement.setInt(4, clientCard.weightGm)
+            }
+            statement.setString(5, clientCard.phone)
+            statement.executeUpdate()
+            val generatedKeys = statement.generatedKeys
+            return if (generatedKeys.next()) {
+                generatedKeys.getLong(1)
+            } else {
+                throw IllegalStateException("Unknown error")
             }
         }
     }
 
-    suspend fun readById(id: Long, coachId: Long): ClientCardFull? = withContext(dispatcherProvider.io()) {
+    suspend fun getById(id: Long, coachId: Long): ClientCardFull? = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->
             connection.prepareStatement(SELECT_BY_ID).use { statement: PreparedStatement ->
                 statement.setLong(1, id)
@@ -175,26 +173,24 @@ class ClientsCardService(
         }
     }
 
-    suspend fun update(id: Long, clientCard: ClientCardCreate): Boolean = withContext(dispatcherProvider.io()) {
-        getConnection().use { connection ->
-            connection.prepareStatement(UPDATE, Statement.RETURN_GENERATED_KEYS).use { statement: PreparedStatement ->
-                statement.setString(1, clientCard.name)
-                if (clientCard.age == null) {
-                    statement.setNull(2, Types.INTEGER)
-                } else {
-                    statement.setInt(2, clientCard.age)
-                }
-                if (clientCard.weightGm == null) {
-                    statement.setNull(3, Types.INTEGER)
-                } else {
-                    statement.setInt(3, clientCard.weightGm)
-                }
-                statement.setString(4, clientCard.phone)
-                statement.setLong(5, id)
-                statement.setLong(6, clientCard.coachId)
-                val updatedCount = statement.executeUpdate()
-                updatedCount > 0
+    fun update(id: Long, clientCard: ClientCardCreate, connection: Connection): Boolean {
+        connection.prepareStatement(UPDATE, Statement.RETURN_GENERATED_KEYS).use { statement: PreparedStatement ->
+            statement.setString(1, clientCard.name)
+            if (clientCard.age == null) {
+                statement.setNull(2, Types.INTEGER)
+            } else {
+                statement.setInt(2, clientCard.age)
             }
+            if (clientCard.weightGm == null) {
+                statement.setNull(3, Types.INTEGER)
+            } else {
+                statement.setInt(3, clientCard.weightGm)
+            }
+            statement.setString(4, clientCard.phone)
+            statement.setLong(5, id)
+            statement.setLong(6, clientCard.coachId)
+            val updatedCount = statement.executeUpdate()
+            return updatedCount > 0
         }
     }
 

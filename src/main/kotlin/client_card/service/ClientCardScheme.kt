@@ -131,23 +131,26 @@ class ClientsCardService(
     ): ClientsCard = withContext(dispatcherProvider.io()) {
         val sql = """
         WITH filtered_clients AS (
-            SELECT id, name, photo_url 
-            FROM ClientsCard 
-            WHERE coach_id = $coachId
+            SELECT id, name, photo_url
+            FROM ClientsCard
+            WHERE coach_id = ?
         )
-        SELECT 
-            (SELECT COUNT(*) FROM filtered_clients) AS total_count, 
-            id, 
-            name, 
+        SELECT
+            (SELECT COUNT(*) FROM filtered_clients) AS total_count,
+            id,
+            name,
             photo_url
         FROM filtered_clients
         ORDER BY id ASC
-        LIMIT $limit OFFSET $offset;
+        LIMIT ? OFFSET ?;
     """.trimIndent()
 
         getConnection().use { connection ->
-            connection.createStatement().use { statement ->
-                val resultSet = statement.executeQuery(sql)
+            connection.prepareStatement(sql).use { statement ->
+                statement.setLong(1, coachId)
+                statement.setInt(2, limit)
+                statement.setInt(3, offset)
+                val resultSet = statement.executeQuery()
 
                 val clients = mutableListOf<ClientCard>()
                 var totalCount = 0

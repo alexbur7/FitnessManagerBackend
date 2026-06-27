@@ -23,7 +23,21 @@ class JwtHelper(
                 .build()
                 .verify(token)
         } catch (_: Exception) {
-            null // Токен недействителен
+            null
+        }
+    }
+
+    fun decodeTokenIgnoreExpiry(token: String): DecodedJWT? {
+        val secret = application.environment.config.property("jwt.secret").getString()
+        val issuer = application.environment.config.property("jwt.issuer").getString()
+        return try {
+            JWT.require(Algorithm.HMAC256(secret))
+                .withIssuer(issuer)
+                .acceptExpiresAt(Long.MAX_VALUE / 1000)
+                .build()
+                .verify(token)
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -40,14 +54,14 @@ class JwtHelper(
     }
 
     internal companion object {
-        const val ACCESS_TOKEN_LIFETIME = 1000 * 60 * 60 * 15L // 15 минут
+        const val ACCESS_TOKEN_LIFETIME = 1000 * 60 * 15L // 15 минут
         const val REFRESH_TOKEN_LIFETIME = 1000 * 60 * 60 * 24 * 30L // 30 дней
         const val USER_ID_KEY = "user_id"
     }
 }
 
-fun JwtHelper.verifyToken(token: String): Long? {
-    return decodeToken(token)?.claims[USER_ID_KEY]?.asLong()
+fun JwtHelper.verifyTokenIgnoreExpiry(token: String): Long? {
+    return decodeTokenIgnoreExpiry(token)?.claims[USER_ID_KEY]?.asLong()
 }
 
 fun JwtHelper.isTokenExpired(token: String): Boolean {

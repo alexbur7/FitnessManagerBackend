@@ -92,19 +92,22 @@ class HistoryWeightService(
             WITH filtered_data AS (
                 SELECT id, weight_gm, date, client_card_id
                 FROM HISTORY_WEIGHT
-                WHERE client_card_id = $clientCardId
+                WHERE client_card_id = ?
             ), total_count AS (
                 SELECT COUNT(*) AS count FROM filtered_data
             )
             SELECT *, (SELECT count FROM total_count) AS total_records
             FROM filtered_data
             ORDER BY date DESC
-            LIMIT $limit OFFSET $offset;
+            LIMIT ? OFFSET ?;
         """.trimIndent()
 
         getConnection().use { connection ->
-            connection.createStatement().use { statement ->
-                val resultSet = statement.executeQuery(sql)
+            connection.prepareStatement(sql).use { statement ->
+                statement.setLong(1, clientCardId)
+                statement.setInt(2, limit)
+                statement.setInt(3, offset)
+                val resultSet = statement.executeQuery()
 
                 val clients = mutableListOf<HistoryWeight>()
                 var totalCount = 0

@@ -24,7 +24,7 @@ class AuthService(
         private const val INSERT_AUTH = "INSERT INTO AUTH (user_id, code, count_login) VALUES (?, ?, ?)"
         private const val SELECT_CODE_BY_ID = "SELECT code, count_login, blocked_time FROM AUTH WHERE user_id = ?"
         private const val DELETE_AUTH = "DELETE FROM AUTH WHERE user_id = ?"
-        private const val UPDATE_AUTH = "UPDATE AUTH SET code = ?, count_login = ?, blocked_time = ? WHERE id = ?"
+        private const val UPDATE_AUTH = "UPDATE AUTH SET code = ?, count_login = ?, blocked_time = ? WHERE user_id = ?"
     }
 
     init {

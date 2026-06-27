@@ -62,9 +62,15 @@ fun Application.configureHistoryWeightRouting(
             }
 
             get("/history-weight/{clientCardId}") {
+                val userId = call.getUserId() ?: return@get
                 val id = call.parameters["clientCardId"]?.toLong()
                 if (id == null) {
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_ID))
+                    return@get
+                }
+                val clientCard = clientsCardService.getById(id, userId)
+                if (clientCard == null) {
+                    call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_CLIENT_CARD))
                     return@get
                 }
                 val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: DEFAULT_LIMIT

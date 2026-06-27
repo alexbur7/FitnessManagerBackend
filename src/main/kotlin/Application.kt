@@ -17,6 +17,7 @@ import ru.alexbur.backend.base.validators.setupValidators
 import ru.alexbur.backend.client_card.configureClientCardRouting
 import ru.alexbur.backend.client_card.service.ClientsCardService
 import ru.alexbur.backend.db.getConnection
+import ru.alexbur.backend.db.initConnectionPool
 import ru.alexbur.backend.di.BaseModule
 import ru.alexbur.backend.di.MappersModule
 import ru.alexbur.backend.events.configureEventRouting
@@ -45,6 +46,8 @@ fun Application.module() {
             )
         }
     }
+
+    initConnectionPool()
 
     val mapper = MappersModule.provideClientCardMapper()
     val historyWeightMapper = MappersModule.provideHistoryWeightMapper()

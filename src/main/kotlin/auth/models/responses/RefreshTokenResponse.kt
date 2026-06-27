@@ -1,4 +1,4 @@
-package ru.alexbur.backend.auth.routings.responses
+package ru.alexbur.backend.auth.models.responses
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

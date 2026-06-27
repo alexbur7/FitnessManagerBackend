@@ -1,16 +1,16 @@
 package ru.alexbur.backend.auth
 
-import auth.models.requests.GetOtpRequest
-import auth.models.requests.LoginRequest
-import auth.models.responses.GetOtpResponse
-import auth.models.responses.LoginResponse
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import ru.alexbur.backend.auth.jwt.*
-import ru.alexbur.backend.auth.routings.responses.RefreshTokenResponse
+import ru.alexbur.backend.auth.models.requests.GetOtpRequest
+import ru.alexbur.backend.auth.models.requests.LoginRequest
+import ru.alexbur.backend.auth.models.responses.GetOtpResponse
+import ru.alexbur.backend.auth.models.responses.LoginResponse
+import ru.alexbur.backend.auth.models.responses.RefreshTokenResponse
 import ru.alexbur.backend.auth.service.AuthInfo
 import ru.alexbur.backend.auth.service.AuthService
 import ru.alexbur.backend.auth.service.SessionService
@@ -116,7 +116,7 @@ fun Application.configureLoginRouting(
                 call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_TOKEN))
                 return@post
             }
-            val userId = jwtHelper.verifyToken(refreshToken)
+            val userId = jwtHelper.verifyTokenIgnoreExpiry(refreshToken)
             if (userId == null) {
                 call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_USER))
                 return@post
@@ -170,13 +170,9 @@ private fun createSession(userId: Long): AuthInfo {
 }
 
 private fun generateOtp(): String {
-    val otp = StringBuilder()
     val digits = "0123456789"
-
-    repeat(6) {
-        val randomIndex = SecureRandom().nextInt(digits.length)
-        otp.append(digits[randomIndex])
+    val secureRandom = SecureRandom()
+    return buildString {
+        repeat(6) { append(digits[secureRandom.nextInt(digits.length)]) }
     }
-
-    return otp.toString()
 }

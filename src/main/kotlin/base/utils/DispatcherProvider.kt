@@ -5,7 +5,6 @@ import kotlinx.coroutines.Dispatchers
 
 interface DispatcherProvider {
     fun io(): CoroutineDispatcher
-    fun main(): CoroutineDispatcher
     fun default(): CoroutineDispatcher
 
     companion object {
@@ -15,8 +14,7 @@ interface DispatcherProvider {
     }
 }
 
-private class DispatcherProviderImpl() : DispatcherProvider {
+private class DispatcherProviderImpl : DispatcherProvider {
     override fun io(): CoroutineDispatcher = Dispatchers.IO
-    override fun main(): CoroutineDispatcher = Dispatchers.Main.immediate
     override fun default(): CoroutineDispatcher = Dispatchers.Default
 }

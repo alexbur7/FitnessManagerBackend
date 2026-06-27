@@ -1,4 +1,4 @@
-package auth.models.requests
+package ru.alexbur.backend.auth.models.requests
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

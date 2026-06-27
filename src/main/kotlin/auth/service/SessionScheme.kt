@@ -48,7 +48,7 @@ class SessionService(
                 if (generatedKeys.next()) {
                     generatedKeys.getLong(1)
                 } else {
-                    IllegalStateException("Unknown error")
+                    throw IllegalStateException("Unknown error")
                 }
             }
         }

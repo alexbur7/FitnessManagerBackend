@@ -29,6 +29,7 @@ dependencies {
     implementation(libs.ktor.server.content.negotiation)
     implementation(libs.postgresql)
     implementation(libs.h2)
+    implementation(libs.hikaricp)
     implementation(libs.ktor.server.call.logging)
     implementation(libs.ktor.server.swagger)
     implementation(libs.ktor.server.openapi)

@@ -1,4 +1,4 @@
-package auth.models.responses
+package ru.alexbur.backend.auth.models.responses
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

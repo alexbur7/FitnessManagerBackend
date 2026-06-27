@@ -41,7 +41,8 @@ class UserService(
                 if (generatedKeys.next()) {
                     generatedKeys.getLong(1)
                 } else {
-                    val selectStatement = connection.prepareStatement("SELECT id FROM USERS WHERE phone = ?;")
+                    val sql = "SELECT id FROM USERS WHERE phone = ?;"
+                    val selectStatement = connection.prepareStatement(sql)
                     selectStatement.setString(1, phone)
                     val selectResultSet = selectStatement.executeQuery()
                     if (selectResultSet.next()) {

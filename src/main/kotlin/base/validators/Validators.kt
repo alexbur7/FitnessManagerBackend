@@ -2,13 +2,24 @@ package ru.alexbur.backend.base.validators
 
 import io.ktor.server.application.*
 import io.ktor.server.plugins.requestvalidation.*
+import ru.alexbur.backend.auth.models.requests.GetOtpRequest
 import ru.alexbur.backend.client_card.models.request.ClientCardCreateRequest
 import ru.alexbur.backend.linking.LINKING_CODE_LENGTH
 import ru.alexbur.backend.linking.models.request.LinkingConnectRequest
 import ru.alexbur.backend.linking.models.request.LinkingCreateRequest
 
+private val PHONE_REGEX = Regex("^7\\d{10}$")
+
 fun Application.setupValidators() {
     install(RequestValidation) {
+        validate<GetOtpRequest> { request ->
+            if (PHONE_REGEX.matches(request.phoneNumber)) {
+                ValidationResult.Valid
+            } else {
+                ValidationResult.Invalid("Номер телефона должен начинаться с 7 и содержать 11 цифр.")
+            }
+        }
+
         validate<ClientCardCreateRequest> { request ->
             val errorMessage = mutableListOf<String>()
             if (request.weightGm != null && request.weightGm <= 0) {

@@ -1,11 +1,11 @@
 
 [versions]
-h2-version = "2.3.232"
-hikaricp-version = "5.1.0"
-kotlin-version = "2.1.10"
-ktor-version = "3.0.3"
-logback-version = "1.4.14"
-postgres-version = "42.7.5"
+h2-version = "2.4.240"
+hikaricp-version = "6.3.0"
+kotlin-version = "2.4.0"
+ktor-version = "3.5.0"
+logback-version = "1.5.37"
+postgres-version = "42.7.11"
 
 [libraries]
 ktor-server-auth = { module = "io.ktor:ktor-server-auth", version.ref = "ktor-version" }

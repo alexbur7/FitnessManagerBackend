@@ -5,6 +5,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class LinkingCreateRequest(
-    @SerialName("client_card_id")
-    val clientCardId: Long
+    @SerialName("client_id")
+    val clientId: Long
 )

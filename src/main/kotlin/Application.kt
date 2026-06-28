@@ -14,8 +14,6 @@ import ru.alexbur.backend.auth.service.SessionService
 import ru.alexbur.backend.auth.service.UserService
 import ru.alexbur.backend.base.errors.createBadRequestError
 import ru.alexbur.backend.base.validators.setupValidators
-import ru.alexbur.backend.client_card.configureClientCardRouting
-import ru.alexbur.backend.client_card.service.ClientsCardService
 import ru.alexbur.backend.db.getConnection
 import ru.alexbur.backend.db.initConnectionPool
 import ru.alexbur.backend.di.BaseModule
@@ -30,6 +28,8 @@ import ru.alexbur.backend.plugins.configureMonitoring
 import ru.alexbur.backend.plugins.configureSerialization
 import ru.alexbur.backend.profile.configureProfileRouting
 import ru.alexbur.backend.profile.service.ProfileService
+import ru.alexbur.backend.relationships.configureRelationshipsRouting
+import ru.alexbur.backend.relationships.service.RelationshipsService
 
 fun main(args: Array<String>) {
     embeddedServer(
@@ -51,10 +51,9 @@ fun Application.module() {
 
     initConnectionPool()
 
-    val mapper = MappersModule.provideClientCardMapper()
     val historyWeightMapper = MappersModule.provideHistoryWeightMapper()
 
-    val clientCardService = ClientsCardService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val relationshipsService = RelationshipsService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val linkingService = LinkingService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val userService = UserService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val eventService = EventService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
@@ -67,9 +66,9 @@ fun Application.module() {
     configureMonitoring()
     setupValidators()
     configureLoginRouting(BaseModule.provideJwtGenerator(this), userService, authService, sessionService)
-    configureEventRouting(MappersModule.provideSportActivityMapper(), clientCardService, eventService)
-    configureClientCardRouting(clientCardService, mapper, historyWeightService, BaseModule.dispatcherProvider)
-    configureLinkingRouting(linkingService, clientCardService, userService, BaseModule.dispatcherProvider)
-    configureHistoryWeightRouting(historyWeightService, clientCardService, historyWeightMapper)
+    configureEventRouting(MappersModule.provideSportActivityMapper(), relationshipsService, eventService)
+    configureRelationshipsRouting(relationshipsService)
+    configureLinkingRouting(linkingService, relationshipsService, userService, BaseModule.dispatcherProvider)
+    configureHistoryWeightRouting(historyWeightService, relationshipsService, historyWeightMapper)
     configureProfileRouting(profileService)
 }

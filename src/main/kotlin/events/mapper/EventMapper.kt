@@ -14,7 +14,7 @@ class EventMapper {
         endTime = model.endTime,
         isEnded = model.isEnded,
         comment = model.comment,
-        clientCardId = model.clientCardId,
+        clientId = model.clientId,
     )
 
     fun map(model: EventCreateRequest, userId: Long) = EventCreate(
@@ -22,7 +22,7 @@ class EventMapper {
         startTime = model.startTime,
         endTime = model.endTime,
         comment = model.comment,
-        clientCardId = model.clientCardId,
+        clientId = model.clientId,
         isEnded = model.isEnded,
     )
 }

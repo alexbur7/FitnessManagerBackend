@@ -12,7 +12,7 @@ data class EventCreate(
     val startTime: Timestamp,
     val endTime: Timestamp,
     val comment: String?,
-    val clientCardId: Long,
+    val clientId: Long,
     val isEnded: Boolean,
 )
 
@@ -23,7 +23,7 @@ data class Event(
     val endTime: Timestamp,
     val isEnded: Boolean,
     val comment: String?,
-    val clientCardId: Long,
+    val clientId: Long,
 )
 
 class EventService(
@@ -35,17 +35,17 @@ class EventService(
             "CREATE TABLE IF NOT EXISTS EVENTS (id SERIAL PRIMARY KEY, user_id INT NOT NULL, " +
                     "start_time TIMESTAMP NOT NULL, " +
                     "end_time TIMESTAMP NOT NULL, is_ended BOOLEAN DEFAULT FALSE, " +
-                    "comment TEXT, client_card_id INT NOT NULL);"
+                    "comment TEXT, client_id INT NOT NULL);"
         private const val INSERT = "INSERT INTO EVENTS (user_id, start_time, end_time, " +
-                "comment, client_card_id, is_ended) VALUES (?, ?, ?, ?, ?, ?);"
+                "comment, client_id, is_ended) VALUES (?, ?, ?, ?, ?, ?);"
         private const val SELECT_BY_ID = "SELECT * FROM EVENTS WHERE id = ? AND user_id = ?;"
         private const val SELECT_BY_TIME = "SELECT * FROM EVENTS WHERE user_id = ? " +
                 "AND start_time >= ? AND end_time <= ?;"
 
         private const val SELECT_BY_TIME_WITH_CLIENT_ID = "SELECT id FROM EVENTS WHERE user_id = ? " +
-                "AND client_card_id = ? AND start_time < ? AND end_time > ?;"
+                "AND client_id = ? AND start_time < ? AND end_time > ?;"
         private const val UPDATE = "UPDATE EVENTS SET start_time = ?, end_time = ?, comment = ?, " +
-                "client_card_id = ?, is_ended = ? WHERE id = ? AND user_id = ?"
+                "client_id = ?, is_ended = ? WHERE id = ? AND user_id = ?"
         private const val DELETE = "DELETE FROM EVENTS WHERE id = ? AND user_id = ?"
     }
 
@@ -64,7 +64,7 @@ class EventService(
                 statement.setTimestamp(2, activity.startTime)
                 statement.setTimestamp(3, activity.endTime)
                 statement.setString(4, activity.comment)
-                statement.setLong(5, activity.clientCardId)
+                statement.setLong(5, activity.clientId)
                 statement.setBoolean(6, activity.isEnded)
                 statement.executeUpdate()
                 val generatedKeys = statement.generatedKeys
@@ -90,7 +90,7 @@ class EventService(
                     val endTime = resultSet.getTimestamp("end_time")
                     val comment = resultSet.getString("comment")
                     val isEnded = resultSet.getBoolean("is_ended")
-                    val clientCardId = resultSet.getLong("client_card_id")
+                    val clientId = resultSet.getLong("client_id")
                     Event(
                         id = id,
                         userId = userId,
@@ -98,7 +98,7 @@ class EventService(
                         endTime = endTime,
                         comment = comment,
                         isEnded = isEnded,
-                        clientCardId = clientCardId
+                        clientId = clientId
                     )
                 } else {
                     null
@@ -127,7 +127,7 @@ class EventService(
                     val endTime = resultSet.getTimestamp("end_time")
                     val comment = resultSet.getString("comment")
                     val isEnded = resultSet.getBoolean("is_ended")
-                    val clientCardId = resultSet.getLong("client_card_id")
+                    val clientId = resultSet.getLong("client_id")
                     result.add(
                         Event(
                             id = id,
@@ -136,7 +136,7 @@ class EventService(
                             endTime = endTime,
                             comment = comment,
                             isEnded = isEnded,
-                            clientCardId = clientCardId
+                            clientId = clientId
                         )
                     )
                 }
@@ -149,12 +149,12 @@ class EventService(
         userId: Long,
         startTime: Timestamp,
         endTime: Timestamp,
-        clientCardId: Long,
+        clientId: Long,
     ): Boolean = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->
             connection.prepareStatement(SELECT_BY_TIME_WITH_CLIENT_ID).use { statement: PreparedStatement ->
                 statement.setLong(1, userId)
-                statement.setLong(2, clientCardId)
+                statement.setLong(2, clientId)
                 statement.setTimestamp(3, endTime)
                 statement.setTimestamp(4, startTime)
                 val resultSet = statement.executeQuery()
@@ -170,7 +170,7 @@ class EventService(
                 statement.setTimestamp(1, activity.startTime)
                 statement.setTimestamp(2, activity.endTime)
                 statement.setString(3, activity.comment)
-                statement.setLong(4, activity.clientCardId)
+                statement.setLong(4, activity.clientId)
                 statement.setBoolean(5, activity.isEnded)
                 statement.setLong(6, id)
                 statement.setLong(7, activity.userId)

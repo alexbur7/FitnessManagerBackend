@@ -10,8 +10,6 @@ import ru.alexbur.backend.base.errors.FitnessManagerErrors
 import ru.alexbur.backend.base.errors.createBadRequestError
 import ru.alexbur.backend.base.success.toSuccess
 import ru.alexbur.backend.base.utils.getUserId
-import ru.alexbur.backend.client_card.checkClientCard
-import ru.alexbur.backend.client_card.service.ClientsCardService
 import ru.alexbur.backend.events.mapper.EventMapper
 import ru.alexbur.backend.events.models.request.EventCreateRequest
 import ru.alexbur.backend.events.models.request.EventGetByTimeRequest
@@ -19,10 +17,11 @@ import ru.alexbur.backend.events.models.response.EventByTimeResponse
 import ru.alexbur.backend.events.models.response.EventResponse
 import ru.alexbur.backend.events.service.Event
 import ru.alexbur.backend.events.service.EventService
+import ru.alexbur.backend.relationships.service.RelationshipsService
 
-fun Application.configureEventRouting(
+internal fun Application.configureEventRouting(
     mapper: EventMapper,
-    clientCardService: ClientsCardService,
+    relationshipsService: RelationshipsService,
     eventService: EventService
 ) {
     routing {
@@ -36,12 +35,15 @@ fun Application.configureEventRouting(
                     )
                     return@post
                 }
-                if (checkClientCard(clientCardService, request.clientCardId, userId)) return@post
+                if (!relationshipsService.hasRelationship(coachId = userId, clientId = request.clientId)) {
+                    call.respond(HttpStatusCode.Forbidden, createBadRequestError(FitnessManagerErrors.UNKNOWN_CLIENT_CARD))
+                    return@post
+                }
                 val hasActivities = eventService.hasActivities(
                     userId = userId,
                     startTime = request.startTime,
                     endTime = request.endTime,
-                    clientCardId = request.clientCardId
+                    clientId = request.clientId
                 )
                 if (hasActivities) {
                     call.respond(

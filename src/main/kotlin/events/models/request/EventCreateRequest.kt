@@ -15,8 +15,8 @@ class EventCreateRequest(
     val endTime: Timestamp,
     @SerialName("comment")
     val comment: String?,
-    @SerialName("client_card_id")
-    val clientCardId: Long,
+    @SerialName("client_id")
+    val clientId: Long,
     @SerialName("is_ended")
     val isEnded: Boolean = false,
 )

@@ -11,29 +11,28 @@ import ru.alexbur.backend.auth.service.UserInfo
 import ru.alexbur.backend.auth.service.UserService
 import ru.alexbur.backend.base.errors.FitnessManagerErrors
 import ru.alexbur.backend.base.errors.createBadRequestError
-import ru.alexbur.backend.base.sql.transaction
 import ru.alexbur.backend.base.success.toSuccess
 import ru.alexbur.backend.base.utils.DispatcherProvider
 import ru.alexbur.backend.base.utils.compareTimeWithCurrent
 import ru.alexbur.backend.base.utils.getCurrentTimestamp
 import ru.alexbur.backend.base.utils.getUserId
-import ru.alexbur.backend.client_card.checkClientCard
-import ru.alexbur.backend.client_card.service.ClientCardUpdate
-import ru.alexbur.backend.client_card.service.ClientsCardService
+import ru.alexbur.backend.db.getConnection
 import ru.alexbur.backend.linking.models.request.LinkingConnectRequest
 import ru.alexbur.backend.linking.models.request.LinkingCreateRequest
 import ru.alexbur.backend.linking.models.response.LinkingInfoResponse
 import ru.alexbur.backend.linking.service.LinkingCreate
 import ru.alexbur.backend.linking.service.LinkingInfo
 import ru.alexbur.backend.linking.service.LinkingService
+import ru.alexbur.backend.relationships.service.RelationshipCreate
+import ru.alexbur.backend.relationships.service.RelationshipsService
 import java.security.SecureRandom
 
 internal const val LINKING_CODE_LENGTH = 8
 private const val EXPIRED_LINKING_CODE_HOUR = 24L
 
-fun Application.configureLinkingRouting(
+internal fun Application.configureLinkingRouting(
     linkingService: LinkingService,
-    clientsCardService: ClientsCardService,
+    relationshipsService: RelationshipsService,
     userService: UserService,
     dispatcherProvider: DispatcherProvider
 ) {
@@ -43,13 +42,12 @@ fun Application.configureLinkingRouting(
                 val userId = call.getUserId() ?: return@post
                 val request = call.receive<LinkingCreateRequest>()
 
-                if (checkClientCard(clientsCardService, request.clientCardId, userId)) return@post
                 val linkingInfo = linkingService.readByCoachId(
                     coachId = userId,
-                    clientCardId = request.clientCardId
+                    clientId = request.clientId
                 )
 
-                // проверяем, если код уже есть для данной связки тренера и клиента, и он не протух, то возвращаем его
+                // если код уже есть для данной связки тренера и клиента, и он не протух, то возвращаем его
                 if (linkingInfo != null && compareTimeWithCurrent(linkingInfo.createdDate, EXPIRED_LINKING_CODE_HOUR)) {
                     val response = LinkingInfoResponse(linkingInfo.code).toSuccess(LinkingInfoResponse.serializer())
                     call.respond(HttpStatusCode.OK, response)
@@ -58,7 +56,7 @@ fun Application.configureLinkingRouting(
 
                 val code = generateAndStoreUniqueCode(
                     coachId = userId,
-                    clientCardId = request.clientCardId,
+                    clientId = request.clientId,
                     service = linkingService
                 )
 
@@ -94,36 +92,34 @@ fun Application.configureLinkingRouting(
                     )
                     return@post
                 }
-                withContext(dispatcherProvider.io()) {
-                    bind(clientsCardService, linkingInfo, userInfo, linkingService)
-                }
+                bind(relationshipsService, linkingInfo, userInfo, linkingService, dispatcherProvider)
                 call.respond(HttpStatusCode.OK)
             }
         }
     }
 }
 
-private fun Application.bind(
-    clientsCardService: ClientsCardService,
+private suspend fun Application.bind(
+    relationshipsService: RelationshipsService,
     linkingInfo: LinkingInfo,
     userInfo: UserInfo,
     linkingService: LinkingService,
+    dispatcherProvider: DispatcherProvider,
 ) {
-    transaction { connection ->
-        clientsCardService.update(
-            id = linkingInfo.clientCardId,
-            clientCard = ClientCardUpdate(
-                phone = userInfo.phone,
-                userId = userInfo.userId,
-                coachId = linkingInfo.coachId,
-            ),
-            connection = connection
+    relationshipsService.create(
+        RelationshipCreate(
+            coachId = linkingInfo.coachId,
+            clientId = userInfo.userId,
         )
-        linkingService.delete(linkingInfo.id, connection)
+    )
+    withContext(dispatcherProvider.io()) {
+        getConnection(embedded = false).use { connection ->
+            linkingService.delete(linkingInfo.id, connection)
+        }
     }
 }
 
-private suspend fun generateAndStoreUniqueCode(coachId: Long, clientCardId: Long, service: LinkingService): String {
+private suspend fun generateAndStoreUniqueCode(coachId: Long, clientId: Long, service: LinkingService): String {
     var code: String
     do {
         code = generateUniqueCode()
@@ -131,7 +127,7 @@ private suspend fun generateAndStoreUniqueCode(coachId: Long, clientCardId: Long
     service.create(
         LinkingCreate(
             coachId = coachId,
-            clientCardId = clientCardId,
+            clientId = clientId,
             code = code,
             createdDate = getCurrentTimestamp()
         )

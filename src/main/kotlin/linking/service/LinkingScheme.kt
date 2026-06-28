@@ -10,14 +10,14 @@ import java.sql.Timestamp
 data class LinkingInfo(
     val id: Long,
     val coachId: Long,
-    val clientCardId: Long,
+    val clientId: Long,
     val code: String,
     val createdDate: Timestamp,
 )
 
 data class LinkingCreate(
     val coachId: Long,
-    val clientCardId: Long,
+    val clientId: Long,
     val code: String,
     val createdDate: Timestamp,
 )
@@ -30,12 +30,12 @@ class LinkingService(
     companion object {
         private const val CREATE_TABLE =
             "CREATE TABLE IF NOT EXISTS LINKING (id SERIAL PRIMARY KEY, coach_id INT NOT NULL, " +
-                    "client_card_id INT NOT NULL, code VARCHAR(8) NOT NULL UNIQUE, created_date TIMESTAMP NOT NULL);"
-        private const val INSERT = "INSERT INTO LINKING (coach_id, client_card_id, code, created_date) " +
+                    "client_id INT NOT NULL, code VARCHAR(8) NOT NULL UNIQUE, created_date TIMESTAMP NOT NULL);"
+        private const val INSERT = "INSERT INTO LINKING (coach_id, client_id, code, created_date) " +
                 "VALUES (?, ?, ?, ?);"
         private const val SELECT_BY_CODE = "SELECT * FROM LINKING WHERE code = ?;"
         private const val SELECT_BY_ID = "SELECT id, code, created_date FROM LINKING " +
-                "WHERE coach_id = ? AND client_card_id = ?;"
+                "WHERE coach_id = ? AND client_id = ?;"
         private const val DELETE = "DELETE FROM LINKING WHERE id = ?"
     }
 
@@ -52,7 +52,7 @@ class LinkingService(
             connection.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS)
                 .use { statement: PreparedStatement ->
                     statement.setLong(1, linking.coachId)
-                    statement.setLong(2, linking.clientCardId)
+                    statement.setLong(2, linking.clientId)
                     statement.setString(3, linking.code)
                     statement.setTimestamp(4, linking.createdDate)
                     statement.executeUpdate()
@@ -75,12 +75,12 @@ class LinkingService(
                 if (resultSet.next()) {
                     val id = resultSet.getLong("id")
                     val coachId = resultSet.getLong("coach_id")
-                    val clientCardId = resultSet.getLong("client_card_id")
+                    val clientId = resultSet.getLong("client_id")
                     val createdDate = resultSet.getTimestamp("created_date")
                     LinkingInfo(
                         id = id,
                         coachId = coachId,
-                        clientCardId = clientCardId,
+                        clientId = clientId,
                         code = code,
                         createdDate = createdDate,
                     )
@@ -91,11 +91,11 @@ class LinkingService(
         }
     }
 
-    suspend fun readByCoachId(coachId: Long, clientCardId: Long): LinkingInfo? = withContext(dispatcherProvider.io()) {
+    suspend fun readByCoachId(coachId: Long, clientId: Long): LinkingInfo? = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->
             connection.prepareStatement(SELECT_BY_ID).use { statement: PreparedStatement ->
                 statement.setLong(1, coachId)
-                statement.setLong(2, clientCardId)
+                statement.setLong(2, clientId)
                 val resultSet = statement.executeQuery()
 
                 if (resultSet.next()) {
@@ -105,7 +105,7 @@ class LinkingService(
                     LinkingInfo(
                         id = id,
                         coachId = coachId,
-                        clientCardId = clientCardId,
+                        clientId = clientId,
                         code = code,
                         createdDate = createdDate
                     )

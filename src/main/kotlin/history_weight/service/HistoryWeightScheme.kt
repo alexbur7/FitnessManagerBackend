@@ -9,7 +9,7 @@ import java.sql.Timestamp
 
 data class HistoryWeightCreate(
     val weightGm: Int,
-    val clientCardId: Long,
+    val clientId: Long,
     val date: Timestamp,
 )
 
@@ -17,7 +17,7 @@ data class HistoryWeight(
     val id: Long,
     val weightGm: Int,
     val date: Timestamp,
-    val clientCardId: Long,
+    val clientId: Long,
 )
 
 data class HistoryWeights(
@@ -33,8 +33,8 @@ class HistoryWeightService(
     companion object {
         private const val CREATE_TABLE =
             "CREATE TABLE IF NOT EXISTS HISTORY_WEIGHT (id SERIAL PRIMARY KEY, weight_gm INT NOT NULL, " +
-                    "client_card_id INT NOT NULL, date TIMESTAMP NOT NULL);"
-        private const val INSERT = "INSERT INTO HISTORY_WEIGHT (weight_gm, client_card_id, date) VALUES (?, ?, ?);"
+                    "client_id INT NOT NULL, date TIMESTAMP NOT NULL);"
+        private const val INSERT = "INSERT INTO HISTORY_WEIGHT (weight_gm, client_id, date) VALUES (?, ?, ?);"
         private const val SELECT_BY_ID = "SELECT * FROM HISTORY_WEIGHT WHERE id = ?"
         private const val UPDATE = "UPDATE HISTORY_WEIGHT SET weight_gm = ? WHERE id = ?"
         private const val DELETE = "DELETE FROM HISTORY_WEIGHT WHERE id = ?"
@@ -51,7 +51,7 @@ class HistoryWeightService(
     fun create(data: HistoryWeightCreate, connection: Connection): Long {
         connection.prepareStatement(INSERT, Statement.RETURN_GENERATED_KEYS).use { statement: PreparedStatement ->
             statement.setInt(1, data.weightGm)
-            statement.setLong(2, data.clientCardId)
+            statement.setLong(2, data.clientId)
             statement.setTimestamp(3, data.date)
             statement.executeUpdate()
             val generatedKeys = statement.generatedKeys
@@ -74,7 +74,7 @@ class HistoryWeightService(
                         id = resultSet.getLong("id"),
                         weightGm = resultSet.getInt("weight_gm"),
                         date = resultSet.getTimestamp("date"),
-                        clientCardId = resultSet.getLong("client_card_id"),
+                        clientId = resultSet.getLong("client_id"),
                     )
                 } else {
                     null
@@ -83,16 +83,16 @@ class HistoryWeightService(
         }
     }
 
-    suspend fun getWeightByClientCardId(
-        clientCardId: Long,
+    suspend fun getWeightByClientId(
+        clientId: Long,
         limit: Int,
         offset: Int
     ): HistoryWeights = withContext(dispatcherProvider.io()) {
         val sql = """
             WITH filtered_data AS (
-                SELECT id, weight_gm, date, client_card_id
+                SELECT id, weight_gm, date, client_id
                 FROM HISTORY_WEIGHT
-                WHERE client_card_id = ?
+                WHERE client_id = ?
             ), total_count AS (
                 SELECT COUNT(*) AS count FROM filtered_data
             )
@@ -104,7 +104,7 @@ class HistoryWeightService(
 
         getConnection().use { connection ->
             connection.prepareStatement(sql).use { statement ->
-                statement.setLong(1, clientCardId)
+                statement.setLong(1, clientId)
                 statement.setInt(2, limit)
                 statement.setInt(3, offset)
                 val resultSet = statement.executeQuery()
@@ -121,7 +121,7 @@ class HistoryWeightService(
                             id = resultSet.getLong("id"),
                             weightGm = resultSet.getInt("weight_gm"),
                             date = resultSet.getTimestamp("date"),
-                            clientCardId = resultSet.getLong("client_card_id"),
+                            clientId = resultSet.getLong("client_id"),
                         )
                     )
                 }

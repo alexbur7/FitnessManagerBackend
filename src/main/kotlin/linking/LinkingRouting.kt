@@ -116,7 +116,6 @@ private fun Application.bind(
                 phone = userInfo.phone,
                 userId = userInfo.userId,
                 coachId = linkingInfo.coachId,
-                photoUrl = userInfo.photoUrl
             ),
             connection = connection
         )

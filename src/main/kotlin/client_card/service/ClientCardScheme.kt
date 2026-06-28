@@ -20,7 +20,6 @@ data class ClientCardUpdate(
     val phone: String,
     val userId: Long,
     val coachId: Long,
-    val photoUrl: String?,
 )
 
 data class ClientCard(
@@ -57,7 +56,7 @@ class ClientsCardService(
         const val SELECT_BY_ID = "SELECT * FROM ClientsCard WHERE id = ? AND coach_id = ?;"
         private const val UPDATE = "UPDATE ClientsCard SET name = ?, age = ?, weight_gm = ?, phone = ? " +
                 "WHERE id = ? AND coach_id = ?"
-        private const val UPDATE_USER_DATA = "UPDATE ClientsCard SET phone = ?, user_id = ?, photo_url = ? " +
+        private const val UPDATE_USER_DATA = "UPDATE ClientsCard SET phone = ?, user_id = ?" +
                 "WHERE id = ? AND coach_id = ?"
         private const val DELETE = "DELETE FROM ClientsCard WHERE id = ? AND coach_id = ?"
     }
@@ -202,9 +201,8 @@ class ClientsCardService(
             .use { statement: PreparedStatement ->
                 statement.setString(1, clientCard.phone)
                 statement.setLong(2, clientCard.userId)
-                statement.setString(3, clientCard.photoUrl)
-                statement.setLong(4, id)
-                statement.setLong(5, clientCard.coachId)
+                statement.setLong(3, id)
+                statement.setLong(4, clientCard.coachId)
                 val updatedCount = statement.executeUpdate()
                 if (updatedCount <= 0) throw IllegalStateException("Error")
             }

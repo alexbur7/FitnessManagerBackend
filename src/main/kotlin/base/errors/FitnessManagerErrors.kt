@@ -29,6 +29,7 @@ enum class FitnessManagerErrors(val code: String, val message: String) {
     EDITING_IS_PROHIBITED("EditingIsProhibited", "Историю веса запрещено редактировать всем, кроме тренера"),
     DONT_EDITING_WEIGHT("DontEditingWeight", "Вес не удалось изменить"),
     DONT_DELETED_WEIGHT("DontDeletedWeight", "Вес не удалось удалить"),
+    UNKNOWN_ERROR("UnknownError", "Неизвестная ошибка"),
 }
 
 fun createBadRequestError(error: FitnessManagerErrors): ErrorWrapperResponse {

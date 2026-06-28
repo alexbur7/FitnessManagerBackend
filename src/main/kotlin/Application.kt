@@ -28,6 +28,8 @@ import ru.alexbur.backend.linking.configureLinkingRouting
 import ru.alexbur.backend.linking.service.LinkingService
 import ru.alexbur.backend.plugins.configureMonitoring
 import ru.alexbur.backend.plugins.configureSerialization
+import ru.alexbur.backend.profile.configureProfileRouting
+import ru.alexbur.backend.profile.service.ProfileService
 
 fun main(args: Array<String>) {
     embeddedServer(
@@ -59,6 +61,7 @@ fun Application.module() {
     val authService = AuthService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val sessionService = SessionService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val historyWeightService = HistoryWeightService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val profileService = ProfileService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     configureSerialization()
     configureSecurity()
     configureMonitoring()
@@ -68,4 +71,5 @@ fun Application.module() {
     configureClientCardRouting(clientCardService, mapper, historyWeightService, BaseModule.dispatcherProvider)
     configureLinkingRouting(linkingService, clientCardService, userService, BaseModule.dispatcherProvider)
     configureHistoryWeightRouting(historyWeightService, clientCardService, historyWeightMapper)
+    configureProfileRouting(profileService)
 }

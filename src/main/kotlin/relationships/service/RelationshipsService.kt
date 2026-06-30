@@ -44,18 +44,22 @@ internal class RelationshipsService(
         const val INSERT = "INSERT INTO RELATIONSHIPS (coach_id, client_id) VALUES (?, ?) RETURNING id;"
         const val SELECT_CLIENTS =
             "SELECT r.client_id, p.first_name, p.second_name, COUNT(*) OVER() AS total_count " +
-            "FROM RELATIONSHIPS r " +
-            "LEFT JOIN PROFILE p ON p.user_id = r.client_id " +
-            "WHERE r.coach_id = ? AND r.is_deleted = FALSE " +
-            "ORDER BY r.client_id ASC LIMIT ? OFFSET ?;"
+                    "FROM RELATIONSHIPS r " +
+                    "LEFT JOIN PROFILE p ON p.user_id = r.client_id " +
+                    "WHERE r.coach_id = ? AND r.is_deleted = FALSE " +
+                    "ORDER BY r.client_id ASC LIMIT ? OFFSET ?;"
         const val SELECT_COACHES =
             "SELECT r.coach_id, p.first_name, p.second_name " +
-            "FROM RELATIONSHIPS r " +
-            "LEFT JOIN PROFILE p ON p.user_id = r.coach_id " +
-            "WHERE r.client_id = ? AND r.is_deleted = FALSE " +
-            "ORDER BY r.coach_id ASC;"
+                    "FROM RELATIONSHIPS r " +
+                    "LEFT JOIN PROFILE p ON p.user_id = r.coach_id " +
+                    "WHERE r.client_id = ? AND r.is_deleted = FALSE " +
+                    "ORDER BY r.coach_id ASC;"
         const val SELECT_RELATIONSHIP =
             "SELECT 1 FROM RELATIONSHIPS WHERE coach_id = ? AND client_id = ? AND is_deleted = FALSE LIMIT 1;"
+        const val SELECT_COACH_OF_RELATIONSHIP =
+            "SELECT 1 FROM RELATIONSHIPS WHERE id = ? AND coach_id = ? AND is_deleted = FALSE LIMIT 1;"
+        const val SELECT_PARTICIPANT_OF_RELATIONSHIP =
+            "SELECT 1 FROM RELATIONSHIPS WHERE id = ? AND (coach_id = ? OR client_id = ?) AND is_deleted = FALSE LIMIT 1;"
     }
 
     init {
@@ -115,6 +119,31 @@ internal class RelationshipsService(
             }
         }
     }
+
+    suspend fun isCoachOfRelationship(
+        userId: Long,
+        relationshipsId: Long
+    ): Boolean = withContext(dispatcherProvider.io()) {
+        getConnection().use { connection ->
+            connection.prepareStatement(SELECT_COACH_OF_RELATIONSHIP).use { statement ->
+                statement.setLong(1, relationshipsId)
+                statement.setLong(2, userId)
+                statement.executeQuery().next()
+            }
+        }
+    }
+
+    suspend fun isParticipantOfRelationship(userId: Long, relationshipsId: Long): Boolean =
+        withContext(dispatcherProvider.io()) {
+            getConnection().use { connection ->
+                connection.prepareStatement(SELECT_PARTICIPANT_OF_RELATIONSHIP).use { statement ->
+                    statement.setLong(1, relationshipsId)
+                    statement.setLong(2, userId)
+                    statement.setLong(3, userId)
+                    statement.executeQuery().next()
+                }
+            }
+        }
 
     suspend fun getCoachesByClientId(clientId: Long): List<CoachProfile> = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->

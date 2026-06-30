@@ -30,6 +30,8 @@ import ru.alexbur.backend.profile.configureProfileRouting
 import ru.alexbur.backend.profile.service.ProfileService
 import relationships.configureRelationshipsRouting
 import ru.alexbur.backend.relationships.service.RelationshipsService
+import ru.alexbur.backend.training_purchases.configureTrainingPurchasesRouting
+import training_purchases.service.TrainingPurchasesService
 
 fun main(args: Array<String>) {
     embeddedServer(
@@ -61,6 +63,7 @@ fun Application.module() {
     val sessionService = SessionService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val historyWeightService = HistoryWeightService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     val profileService = ProfileService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
+    val trainingPurchasesService = TrainingPurchasesService(BaseModule.dispatcherProvider) { getConnection(embedded = false) }
     configureSerialization()
     configureSecurity()
     configureMonitoring()
@@ -71,4 +74,5 @@ fun Application.module() {
     configureLinkingRouting(linkingService, relationshipsService, userService, BaseModule.dispatcherProvider)
     configureHistoryWeightRouting(historyWeightService, relationshipsService, historyWeightMapper)
     configureProfileRouting(profileService)
+    configureTrainingPurchasesRouting(trainingPurchasesService, relationshipsService, profileService)
 }

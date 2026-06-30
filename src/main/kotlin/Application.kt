@@ -28,7 +28,7 @@ import ru.alexbur.backend.plugins.configureMonitoring
 import ru.alexbur.backend.plugins.configureSerialization
 import ru.alexbur.backend.profile.configureProfileRouting
 import ru.alexbur.backend.profile.service.ProfileService
-import ru.alexbur.backend.relationships.configureRelationshipsRouting
+import relationships.configureRelationshipsRouting
 import ru.alexbur.backend.relationships.service.RelationshipsService
 
 fun main(args: Array<String>) {
@@ -67,7 +67,7 @@ fun Application.module() {
     setupValidators()
     configureLoginRouting(BaseModule.provideJwtGenerator(this), userService, authService, sessionService)
     configureEventRouting(MappersModule.provideSportActivityMapper(), relationshipsService, eventService)
-    configureRelationshipsRouting(relationshipsService)
+    configureRelationshipsRouting(relationshipsService, profileService)
     configureLinkingRouting(linkingService, relationshipsService, userService, BaseModule.dispatcherProvider)
     configureHistoryWeightRouting(historyWeightService, relationshipsService, historyWeightMapper)
     configureProfileRouting(profileService)

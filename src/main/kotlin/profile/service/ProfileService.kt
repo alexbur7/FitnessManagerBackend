@@ -24,12 +24,27 @@ internal class ProfileService(
                 "type_profile INT NOT NULL DEFAULT 0);"
 
         private const val UPDATE_TYPE = "UPDATE PROFILE SET type_profile = ? WHERE user_id = ?"
+        private const val SELECT_TYPE = "SELECT type_profile FROM PROFILE WHERE user_id = ?;"
     }
 
     init {
         getConnection().use { connection ->
             connection.createStatement().use { statement ->
                 statement.executeUpdate(CREATE_TABLE)
+            }
+        }
+    }
+
+    suspend fun getTypeProfile(userId: Long): ProfileType = withContext(dispatcherProvider.io()) {
+        getConnection().use { connection ->
+            connection.prepareStatement(SELECT_TYPE).use { statement ->
+                statement.setLong(1, userId)
+                val resultSet = statement.executeQuery()
+                if (resultSet.next()) {
+                    ProfileType.fromInt(resultSet.getInt("type_profile"))
+                } else {
+                    ProfileType.UNKNOWN
+                }
             }
         }
     }

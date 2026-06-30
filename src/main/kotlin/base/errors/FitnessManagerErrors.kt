@@ -29,6 +29,8 @@ enum class FitnessManagerErrors(val code: String, val message: String) {
     EDITING_IS_PROHIBITED("EditingIsProhibited", "Историю веса запрещено редактировать всем, кроме тренера"),
     DONT_EDITING_WEIGHT("DontEditingWeight", "Вес не удалось изменить"),
     DONT_DELETED_WEIGHT("DontDeletedWeight", "Вес не удалось удалить"),
+    INVALID_PROFILE_TYPE("InvalidProfileType", "Данный функционал доступен только для клиентов"),
+    INVALID_PROFILE_TYPE_COACH("InvalidProfileTypeCoach", "Данный функционал доступен только для тренеров"),
     UNKNOWN_ERROR("UnknownError", "Неизвестная ошибка"),
 }
 

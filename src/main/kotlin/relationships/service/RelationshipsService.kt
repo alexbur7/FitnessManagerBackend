@@ -9,9 +9,21 @@ internal data class RelationshipCreate(
     val clientId: Long,
 )
 
+internal data class CoachProfile(
+    val coachId: Long,
+    val firstName: String?,
+    val lastName: String?,
+)
+
+internal data class ClientProfile(
+    val clientId: Long,
+    val firstName: String?,
+    val lastName: String?,
+)
+
 internal data class RelationshipClients(
     val totalCount: Int,
-    val clientIds: List<Long>,
+    val clients: List<ClientProfile>,
 )
 
 internal class RelationshipsService(
@@ -31,10 +43,17 @@ internal class RelationshipsService(
         """
         const val INSERT = "INSERT INTO RELATIONSHIPS (coach_id, client_id) VALUES (?, ?) RETURNING id;"
         const val SELECT_CLIENTS =
-            "SELECT client_id, COUNT(*) OVER() AS total_count " +
-            "FROM RELATIONSHIPS WHERE coach_id = ? AND is_deleted = FALSE " +
-            "ORDER BY client_id ASC LIMIT ? OFFSET ?;"
-        const val SELECT_COACHES = "SELECT coach_id FROM RELATIONSHIPS WHERE client_id = ? AND is_deleted = FALSE;"
+            "SELECT r.client_id, p.first_name, p.second_name, COUNT(*) OVER() AS total_count " +
+            "FROM RELATIONSHIPS r " +
+            "LEFT JOIN PROFILE p ON p.user_id = r.client_id " +
+            "WHERE r.coach_id = ? AND r.is_deleted = FALSE " +
+            "ORDER BY r.client_id ASC LIMIT ? OFFSET ?;"
+        const val SELECT_COACHES =
+            "SELECT r.coach_id, p.first_name, p.second_name " +
+            "FROM RELATIONSHIPS r " +
+            "LEFT JOIN PROFILE p ON p.user_id = r.coach_id " +
+            "WHERE r.client_id = ? AND r.is_deleted = FALSE " +
+            "ORDER BY r.coach_id ASC;"
         const val SELECT_RELATIONSHIP =
             "SELECT 1 FROM RELATIONSHIPS WHERE coach_id = ? AND client_id = ? AND is_deleted = FALSE LIMIT 1;"
     }
@@ -70,13 +89,19 @@ internal class RelationshipsService(
                     statement.setInt(2, limit)
                     statement.setInt(3, offset)
                     val resultSet = statement.executeQuery()
-                    val ids = mutableListOf<Long>()
+                    val clients = mutableListOf<ClientProfile>()
                     var totalCount = 0
                     while (resultSet.next()) {
-                        if (ids.isEmpty()) totalCount = resultSet.getInt("total_count")
-                        ids.add(resultSet.getLong("client_id"))
+                        if (clients.isEmpty()) totalCount = resultSet.getInt("total_count")
+                        clients.add(
+                            ClientProfile(
+                                clientId = resultSet.getLong("client_id"),
+                                firstName = resultSet.getString("first_name"),
+                                lastName = resultSet.getString("second_name"),
+                            )
+                        )
                     }
-                    RelationshipClients(totalCount = totalCount, clientIds = ids)
+                    RelationshipClients(totalCount = totalCount, clients = clients)
                 }
             }
         }
@@ -91,16 +116,22 @@ internal class RelationshipsService(
         }
     }
 
-    suspend fun getCoachesByClientId(clientId: Long): List<Long> = withContext(dispatcherProvider.io()) {
+    suspend fun getCoachesByClientId(clientId: Long): List<CoachProfile> = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->
             connection.prepareStatement(SELECT_COACHES).use { statement ->
                 statement.setLong(1, clientId)
                 val resultSet = statement.executeQuery()
-                val ids = mutableListOf<Long>()
+                val coaches = mutableListOf<CoachProfile>()
                 while (resultSet.next()) {
-                    ids.add(resultSet.getLong("coach_id"))
+                    coaches.add(
+                        CoachProfile(
+                            coachId = resultSet.getLong("coach_id"),
+                            firstName = resultSet.getString("first_name"),
+                            lastName = resultSet.getString("second_name"),
+                        )
+                    )
                 }
-                ids
+                coaches
             }
         }
     }

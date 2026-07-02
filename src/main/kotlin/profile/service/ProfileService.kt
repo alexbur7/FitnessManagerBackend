@@ -5,6 +5,11 @@ import ru.alexbur.backend.base.utils.DispatcherProvider
 import ru.alexbur.backend.profile.data.ProfileType
 import java.sql.Connection
 
+internal data class ProfileNames(
+    val firstName: String?,
+    val lastName: String?,
+)
+
 internal data class ProfileTypeUpdate(
     val profileType: ProfileType,
 )
@@ -25,6 +30,8 @@ internal class ProfileService(
 
         private const val UPDATE_TYPE = "UPDATE PROFILE SET type_profile = ? WHERE user_id = ?"
         private const val SELECT_TYPE = "SELECT type_profile FROM PROFILE WHERE user_id = ?;"
+        private const val SELECT_BY_USER_IDS =
+            "SELECT user_id, first_name, second_name FROM PROFILE WHERE user_id = ANY(?);"
     }
 
     init {
@@ -48,6 +55,26 @@ internal class ProfileService(
             }
         }
     }
+
+    suspend fun getProfilesByUserIds(userIds: List<Long>): Map<Long, ProfileNames> =
+        withContext(dispatcherProvider.io()) {
+            if (userIds.isEmpty()) return@withContext emptyMap()
+            getConnection().use { connection ->
+                val array = connection.createArrayOf("bigint", userIds.toTypedArray())
+                connection.prepareStatement(SELECT_BY_USER_IDS).use { statement ->
+                    statement.setArray(1, array)
+                    val resultSet = statement.executeQuery()
+                    val result = mutableMapOf<Long, ProfileNames>()
+                    while (resultSet.next()) {
+                        result[resultSet.getLong("user_id")] = ProfileNames(
+                            firstName = resultSet.getString("first_name"),
+                            lastName = resultSet.getString("second_name"),
+                        )
+                    }
+                    result
+                }
+            }
+        }
 
     suspend fun typeUpdate(userId: Long, data: ProfileTypeUpdate) = withContext(dispatcherProvider.io()) {
         getConnection().use { connection ->

@@ -9,18 +9,16 @@ import java.sql.Timestamp
 class EventResponse(
     @SerialName("id")
     val id: Long,
-    @SerialName("user_id")
-    val userId: Long,
     @SerialName("start_time")
     @Serializable(with = TimestampSerializer::class)
     val startTime: Timestamp,
     @SerialName("end_time")
     @Serializable(with = TimestampSerializer::class)
     val endTime: Timestamp,
-    @SerialName("is_ended")
-    val isEnded: Boolean,
+    @SerialName("is_cancelled")
+    val isCancelled: Boolean,
     @SerialName("comment")
     val comment: String?,
-    @SerialName("client_id")
-    val clientId: Long,
+    @SerialName("relationship_id")
+    val relationshipId: Long,
 )

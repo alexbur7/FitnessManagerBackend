@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 internal data class ClientProfileResponse(
-    @SerialName("client_id") val clientId: Long,
+    @SerialName("relationship_id") val relationshipId: Long,
     @SerialName("first_name") val firstName: String?,
     @SerialName("last_name") val lastName: String?,
+    @SerialName("remaining_count") val remainingCount: Int,
 )

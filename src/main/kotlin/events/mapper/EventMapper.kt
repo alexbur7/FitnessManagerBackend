@@ -9,20 +9,18 @@ class EventMapper {
 
     fun map(model: Event) = EventResponse(
         id = model.id,
-        userId = model.userId,
         startTime = model.startTime,
         endTime = model.endTime,
-        isEnded = model.isEnded,
+        isCancelled = model.isCancelled,
         comment = model.comment,
-        clientId = model.clientId,
+        relationshipId = model.relationshipId,
     )
 
-    fun map(model: EventCreateRequest, userId: Long) = EventCreate(
-        userId = userId,
+    fun map(model: EventCreateRequest) = EventCreate(
         startTime = model.startTime,
         endTime = model.endTime,
         comment = model.comment,
-        clientId = model.clientId,
-        isEnded = model.isEnded,
+        relationshipId = model.relationshipId,
+        isCancelled = model.isCancelled,
     )
 }

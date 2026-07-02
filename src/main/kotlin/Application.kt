@@ -70,7 +70,7 @@ fun Application.module() {
     setupValidators()
     configureLoginRouting(BaseModule.provideJwtGenerator(this), userService, authService, sessionService)
     configureEventRouting(MappersModule.provideSportActivityMapper(), relationshipsService, eventService)
-    configureRelationshipsRouting(relationshipsService, profileService)
+    configureRelationshipsRouting(relationshipsService, profileService, eventService)
     configureLinkingRouting(linkingService, relationshipsService, userService, BaseModule.dispatcherProvider)
     configureHistoryWeightRouting(historyWeightService, relationshipsService, historyWeightMapper)
     configureProfileRouting(profileService)

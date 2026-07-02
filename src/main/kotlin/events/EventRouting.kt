@@ -27,7 +27,7 @@ internal fun Application.configureEventRouting(
     routing {
         authenticate("auth-jwt") {
             post("/event/create") {
-                val userId = call.getUserId() ?: return@post
+                val coachId = call.getUserId() ?: return@post
                 val request = call.receive<EventCreateRequest>()
                 if (request.startTime >= request.endTime) {
                     call.respond(
@@ -35,15 +35,14 @@ internal fun Application.configureEventRouting(
                     )
                     return@post
                 }
-                if (!relationshipsService.hasRelationship(coachId = userId, clientId = request.clientId)) {
+                if (!relationshipsService.isCoachOfRelationship(coachId = coachId, relationshipsId = request.relationshipId)) {
                     call.respond(HttpStatusCode.Forbidden, createBadRequestError(FitnessManagerErrors.UNKNOWN_CLIENT_CARD))
                     return@post
                 }
                 val hasActivities = eventService.hasActivities(
-                    userId = userId,
                     startTime = request.startTime,
                     endTime = request.endTime,
-                    clientId = request.clientId
+                    relationshipId = request.relationshipId
                 )
                 if (hasActivities) {
                     call.respond(
@@ -53,8 +52,8 @@ internal fun Application.configureEventRouting(
                     return@post
                 }
 
-                val id = eventService.create(mapper.map(request, userId))
-                val data = getEvent(eventService, id, userId) ?: return@post
+                val id = eventService.create(mapper.map(request))
+                val data = getEvent(eventService, id, coachId) ?: return@post
                 sendEventResponse(mapper, data)
             }
 
@@ -62,7 +61,7 @@ internal fun Application.configureEventRouting(
                 val userId = call.getUserId() ?: return@post
                 val request = call.receive<EventGetByTimeRequest>()
                 val result = eventService.readByTime(
-                    userId = userId,
+                    coachId = userId,
                     startTime = request.startTime,
                     endTime = request.endTime,
                 )
@@ -91,7 +90,7 @@ internal fun Application.configureEventRouting(
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_ID))
                     return@put
                 }
-                val isUpdate = eventService.update(id, mapper.map(request, userId))
+                val isUpdate = eventService.update(id = id, activity = mapper.map(request), coachId = userId)
                 if (!isUpdate) {
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.ERROR_UPDATE))
                     return@put
@@ -107,7 +106,7 @@ internal fun Application.configureEventRouting(
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_ID))
                     return@delete
                 }
-                val isDeleted = eventService.delete(id, userId)
+                val isDeleted = eventService.delete(id = id, coachId = userId)
                 if (!isDeleted) {
                     call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.ERROR_DELETE))
                     return@delete
@@ -126,9 +125,9 @@ private suspend fun RoutingContext.sendEventResponse(mapper: EventMapper, data: 
 private suspend fun RoutingContext.getEvent(
     service: EventService,
     id: Long,
-    userId: Long
+    userId: Long,
 ): Event? {
-    val data = service.readById(id, userId)
+    val data = service.readById(id = id, coachId = userId)
     if (data == null) {
         call.respond(HttpStatusCode.BadRequest, createBadRequestError(FitnessManagerErrors.UNKNOWN_EVENT))
         return null

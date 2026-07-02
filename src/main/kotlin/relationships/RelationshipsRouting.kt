@@ -16,15 +16,20 @@ import ru.alexbur.backend.base.utils.DEFAULT_LIMIT
 import ru.alexbur.backend.base.utils.DEFAULT_OFFSET
 import ru.alexbur.backend.base.utils.getUserId
 import ru.alexbur.backend.profile.data.ProfileType
+import ru.alexbur.backend.events.service.EventService
 import ru.alexbur.backend.profile.service.ProfileService
 import ru.alexbur.backend.relationships.service.RelationshipsService
 
-internal fun Application.configureRelationshipsRouting(service: RelationshipsService, profileService: ProfileService) {
+internal fun Application.configureRelationshipsRouting(
+    service: RelationshipsService,
+    profileService: ProfileService,
+    eventService: EventService,
+) {
     routing {
         authenticate("auth-jwt") {
             get("/relationships/clients") {
-                val userId = call.getUserId() ?: return@get
-                val typeProfile = profileService.getTypeProfile(userId)
+                val coachId = call.getUserId() ?: return@get
+                val typeProfile = profileService.getTypeProfile(coachId)
                 if (typeProfile != ProfileType.COACH) {
                     call.respond(
                         HttpStatusCode.Forbidden,
@@ -34,16 +39,22 @@ internal fun Application.configureRelationshipsRouting(service: RelationshipsSer
                 }
                 val limit = call.request.queryParameters["limit"]?.toIntOrNull() ?: DEFAULT_LIMIT
                 val offset = call.request.queryParameters["offset"]?.toIntOrNull() ?: DEFAULT_OFFSET
-                val result = service.getClientsByCoachId(userId, limit, offset)
+                val result = service.getClientsByCoachId(coachId = coachId, limit = limit, offset = offset)
+                val clientIds = result.clients.map { it.clientId }
+                val relationshipIds = result.clients.map { it.relationshipId }
+                val profiles = profileService.getProfilesByUserIds(userIds = clientIds)
+                val remainingCounts = eventService.getRemainingCountsByRelationshipIds(relationshipIds = relationshipIds)
                 call.respond(
                     HttpStatusCode.OK,
                     RelationshipClientsResponse(
                         totalCount = result.totalCount,
-                        clients = result.clients.map { profile ->
+                        clients = result.clients.map { client ->
+                            val profile = profiles[client.clientId]
                             ClientProfileResponse(
-                                clientId = profile.clientId,
-                                firstName = profile.firstName,
-                                lastName = profile.lastName,
+                                relationshipId = client.relationshipId,
+                                firstName = profile?.firstName,
+                                lastName = profile?.lastName,
+                                remainingCount = remainingCounts.getOrDefault(key = client.relationshipId, defaultValue = 0),
                             )
                         },
                     ).toSuccess(RelationshipClientsResponse.serializer())

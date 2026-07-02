@@ -15,8 +15,8 @@ class EventCreateRequest(
     val endTime: Timestamp,
     @SerialName("comment")
     val comment: String?,
-    @SerialName("client_id")
-    val clientId: Long,
-    @SerialName("is_ended")
-    val isEnded: Boolean = false,
+    @SerialName("relationship_id")
+    val relationshipId: Long,
+    @SerialName("is_cancelled")
+    val isCancelled: Boolean = false,
 )

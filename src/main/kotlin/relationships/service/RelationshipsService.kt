@@ -10,6 +10,7 @@ internal data class RelationshipCreate(
 )
 
 internal data class CoachProfile(
+    val relationshipId: Long,
     val coachId: Long,
     val firstName: String?,
     val lastName: String?,
@@ -47,7 +48,7 @@ internal class RelationshipsService(
             "WHERE r.coach_id = ? AND r.is_deleted = FALSE " +
             "ORDER BY r.id ASC LIMIT ? OFFSET ?;"
         const val SELECT_COACHES =
-            "SELECT r.coach_id, p.first_name, p.second_name " +
+            "SELECT r.id AS relationship_id, r.coach_id, p.first_name, p.second_name " +
                     "FROM RELATIONSHIPS r " +
                     "LEFT JOIN PROFILE p ON p.user_id = r.coach_id " +
                     "WHERE r.client_id = ? AND r.is_deleted = FALSE " +
@@ -151,6 +152,7 @@ internal class RelationshipsService(
                 while (resultSet.next()) {
                     coaches.add(
                         CoachProfile(
+                            relationshipId = resultSet.getLong("relationship_id"),
                             coachId = resultSet.getLong("coach_id"),
                             firstName = resultSet.getString("first_name"),
                             lastName = resultSet.getString("second_name"),

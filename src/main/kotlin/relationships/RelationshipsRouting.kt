@@ -71,15 +71,18 @@ internal fun Application.configureRelationshipsRouting(
                     )
                     return@get
                 }
-                val coaches = service.getCoachesByClientId(userId)
+                val coaches = service.getCoachesByClientId(clientId = userId)
+                val relationshipIds = coaches.map { it.relationshipId }
+                val remainingCounts = eventService.getRemainingCountsByRelationshipIds(relationshipIds = relationshipIds)
                 call.respond(
                     HttpStatusCode.OK,
                     RelationshipCoachesResponse(
                         coaches = coaches.map { coach ->
                             CoachProfileResponse(
-                                coachId = coach.coachId,
+                                relationshipId = coach.relationshipId,
                                 firstName = coach.firstName,
                                 lastName = coach.lastName,
+                                remainingCount = remainingCounts.getOrDefault(key = coach.relationshipId, defaultValue = 0),
                             )
                         }
                     ).toSuccess(RelationshipCoachesResponse.serializer())
